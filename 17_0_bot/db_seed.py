@@ -3,7 +3,7 @@ import sqlite3
 import sys
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
-import nfl_data_py as nfl
+import nflreadpy as nfl
 import pandas as pd
 
 try:
@@ -33,7 +33,9 @@ def init_db(db_path: str = DB_PATH) -> sqlite3.Connection:
             college TEXT,
             draft_year INTEGER,
             draft_round INTEGER,
-            draft_pick INTEGER
+            draft_pick INTEGER,
+            headshot_url TEXT,
+            espn_id TEXT
         );
 
         CREATE TABLE IF NOT EXISTS player_seasons (
@@ -94,12 +96,10 @@ def calculate_fppg(row: pd.Series) -> float:
     if not games or games <= 0 or pd.isna(games):
         return 0.0
 
-    # If fantasy_points_ppr is directly present and valid
     fppr = row.get("fantasy_points_ppr")
     if pd.notna(fppr):
         return round(float(fppr) / float(games), 2)
 
-    # Manual fallback calculation based on formula
     pass_yds = float(row.get("passing_yards", 0) or 0)
     pass_tds = float(row.get("passing_tds", 0) or 0)
     ints = float(row.get("interceptions", 0) or 0)
@@ -129,22 +129,22 @@ def calculate_fppg(row: pd.Series) -> float:
 
 
 def seed_data(start_year: int = 1999, end_year: int = 2025, db_path: str = DB_PATH):
-    """Fetches historical NFL data and populates SQLite database."""
+    """Fetches historical NFL data using nflreadpy and populates SQLite database."""
     conn = init_db(db_path)
     years = list(range(start_year, end_year + 1))
 
-    logger.info("Fetching global players dataset from nfl_data_py...")
+    logger.info("Fetching global players dataset from nflreadpy...")
     try:
-        players_df = nfl.import_players()
+        players_df = nfl.load_players().to_pandas()
     except Exception as e:
-        logger.warning("Could not fetch import_players: %s", e)
+        logger.warning("Could not fetch load_players: %s", e)
         players_df = pd.DataFrame()
 
-    logger.info("Fetching draft picks dataset from nfl_data_py...")
+    logger.info("Fetching draft picks dataset from nflreadpy...")
     try:
-        draft_df = nfl.import_draft_picks()
+        draft_df = nfl.load_draft_picks().to_pandas()
     except Exception as e:
-        logger.warning("Could not fetch import_draft_picks: %s", e)
+        logger.warning("Could not fetch load_draft_picks: %s", e)
         draft_df = pd.DataFrame()
 
     # Pre-process player metadata
@@ -156,6 +156,8 @@ def seed_data(start_year: int = 1999, end_year: int = 2025, db_path: str = DB_PA
                 continue
             name = str(row.get("display_name", "") or row.get("football_name", "")).strip()
             college = str(row.get("college_name", "") or "").strip()
+            headshot = str(row.get("headshot", "") or "").strip()
+            espn_id = str(row.get("espn_id", "") or "").strip()
             draft_year = row.get("draft_year")
             draft_round = row.get("draft_round")
             draft_pick = row.get("draft_pick")
@@ -176,6 +178,8 @@ def seed_data(start_year: int = 1999, end_year: int = 2025, db_path: str = DB_PA
             player_meta[pid] = {
                 "name": name,
                 "college": college if college and college.lower() != "nan" else None,
+                "headshot_url": headshot if headshot and headshot.lower() != "nan" else None,
+                "espn_id": espn_id if espn_id and espn_id.lower() != "nan" else None,
                 "draft_year": dy,
                 "draft_round": dr,
                 "draft_pick": dp,
@@ -210,6 +214,8 @@ def seed_data(start_year: int = 1999, end_year: int = 2025, db_path: str = DB_PA
                 player_meta[pid] = {
                     "name": name,
                     "college": college if college and college.lower() != "nan" else None,
+                    "headshot_url": None,
+                    "espn_id": None,
                     "draft_year": dy,
                     "draft_round": dr,
                     "draft_pick": dp,
@@ -229,16 +235,14 @@ def seed_data(start_year: int = 1999, end_year: int = 2025, db_path: str = DB_PA
     # Ingest seasonal rosters and stats year by year
     for yr in years:
         logger.info("--- Processing NFL Season %d ---", yr)
-        # 1. Fetch seasonal rosters
         try:
-            rosters_yr = nfl.import_seasonal_rosters([yr])
+            rosters_yr = nfl.load_rosters([yr]).to_pandas()
         except Exception as e:
             logger.warning("Failed to fetch rosters for season %d: %s", yr, e)
             rosters_yr = pd.DataFrame()
 
-        # 2. Fetch seasonal stats
         try:
-            stats_yr = nfl.import_seasonal_data([yr])
+            stats_yr = nfl.load_player_stats([yr]).to_pandas()
         except Exception as e:
             logger.warning("Failed to fetch seasonal stats for season %d: %s", yr, e)
             stats_yr = pd.DataFrame()
@@ -247,12 +251,9 @@ def seed_data(start_year: int = 1999, end_year: int = 2025, db_path: str = DB_PA
             logger.info("Skipping season %d (no data found)", yr)
             continue
 
-        # Filter rosters to QB, RB, WR, TE and record career teams
         if not rosters_yr.empty:
-            # Normalize team column
             rosters_yr["canon_team"] = rosters_yr["team"].apply(get_canonical_team)
 
-            # Insert into player_career_teams
             career_records = []
             for _, r in rosters_yr.iterrows():
                 pid = str(r.get("player_id", "") or "").strip()
@@ -266,12 +267,10 @@ def seed_data(start_year: int = 1999, end_year: int = 2025, db_path: str = DB_PA
                     career_records,
                 )
 
-            # Filter to offensive skill positions
             rosters_skill = rosters_yr[rosters_yr["position"].isin(["QB", "RB", "WR", "TE"])].copy()
         else:
             rosters_skill = pd.DataFrame()
 
-        # Prepare stats dictionary: (player_id) -> (games, fppg)
         stats_dict: Dict[str, Tuple[int, float]] = {}
         if not stats_yr.empty:
             for _, srow in stats_yr.iterrows():
@@ -282,12 +281,10 @@ def seed_data(start_year: int = 1999, end_year: int = 2025, db_path: str = DB_PA
                 fppg = calculate_fppg(srow)
                 stats_dict[pid] = (games, fppg)
 
-        # Merge and insert player_seasons & players
         players_to_insert = []
         seasons_to_insert = []
 
         if not rosters_skill.empty:
-            # Group by player_id, team, season
             for _, rrow in rosters_skill.iterrows():
                 pid = str(rrow.get("player_id", "") or "").strip()
                 if not pid or pid.lower() == "nan":
@@ -302,11 +299,12 @@ def seed_data(start_year: int = 1999, end_year: int = 2025, db_path: str = DB_PA
                 except (ValueError, TypeError):
                     ey = None
 
-                # Update player meta if missing
                 if pid not in player_meta:
                     player_meta[pid] = {
                         "name": name,
                         "college": college if college and college.lower() != "nan" else None,
+                        "headshot_url": None,
+                        "espn_id": None,
                         "draft_year": ey,
                         "draft_round": None,
                         "draft_pick": None,
@@ -327,6 +325,8 @@ def seed_data(start_year: int = 1999, end_year: int = 2025, db_path: str = DB_PA
                     meta["draft_year"],
                     meta["draft_round"],
                     meta["draft_pick"],
+                    meta["headshot_url"],
+                    meta["espn_id"],
                 ))
 
                 games, fppg = stats_dict.get(pid, (0, 0.0))
@@ -335,14 +335,16 @@ def seed_data(start_year: int = 1999, end_year: int = 2025, db_path: str = DB_PA
         with conn:
             conn.executemany(
                 """
-                INSERT INTO players (player_id, name, college, draft_year, draft_round, draft_pick)
-                VALUES (?, ?, ?, ?, ?, ?)
+                INSERT INTO players (player_id, name, college, draft_year, draft_round, draft_pick, headshot_url, espn_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(player_id) DO UPDATE SET
                     name=coalesce(excluded.name, players.name),
                     college=coalesce(excluded.college, players.college),
                     draft_year=coalesce(excluded.draft_year, players.draft_year),
                     draft_round=coalesce(excluded.draft_round, players.draft_round),
-                    draft_pick=coalesce(excluded.draft_pick, players.draft_pick)
+                    draft_pick=coalesce(excluded.draft_pick, players.draft_pick),
+                    headshot_url=coalesce(excluded.headshot_url, players.headshot_url),
+                    espn_id=coalesce(excluded.espn_id, players.espn_id)
                 """,
                 players_to_insert,
             )
@@ -365,7 +367,6 @@ def seed_data(start_year: int = 1999, end_year: int = 2025, db_path: str = DB_PA
             len(seasons_to_insert),
         )
 
-    # Seed Special Connections (Elite & Legendary)
     seed_special_connections(conn)
     conn.close()
     logger.info("Database seeding complete!")
@@ -375,7 +376,6 @@ def seed_special_connections(conn: sqlite3.Connection):
     """Populates iconic NFL special connections."""
     cur = conn.cursor()
 
-    # List of iconic pairings (Name 1, Name 2, Type, Label)
     ICONIC_CONNECTIONS: List[Tuple[str, str, str, str]] = [
         ("Tom Brady", "Rob Gronkowski", "LEGENDARY", "Brady to Gronk"),
         ("Peyton Manning", "Marvin Harrison", "LEGENDARY", "Manning to Harrison"),
@@ -408,7 +408,6 @@ def seed_special_connections(conn: sqlite3.Connection):
 
     records = []
     for name1, name2, ctype, label in ICONIC_CONNECTIONS:
-        # Look up player IDs by name
         cur.execute("SELECT player_id, name FROM players WHERE name LIKE ? ORDER BY LENGTH(name) ASC LIMIT 1", (f"%{name1}%",))
         r1 = cur.fetchone()
         cur.execute("SELECT player_id, name FROM players WHERE name LIKE ? ORDER BY LENGTH(name) ASC LIMIT 1", (f"%{name2}%",))
@@ -416,7 +415,6 @@ def seed_special_connections(conn: sqlite3.Connection):
 
         if r1 and r2:
             pid1, pid2 = r1[0], r2[0]
-            # Store ordered by player_id
             if pid1 > pid2:
                 pid1, pid2 = pid2, pid1
             records.append((pid1, pid2, ctype, label))

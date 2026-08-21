@@ -18,6 +18,8 @@ class RosterPlayer:
     base_fppg: float
     college: Optional[str] = None
     draft_year: Optional[int] = None
+    headshot_url: Optional[str] = None
+    espn_id: Optional[str] = None
     career_teams: Set[str] = field(default_factory=set)  # Set of team codes player played for in career
     # Chemistry tags applied to this specific player (e.g., ["Same Team +2", "Legendary +2"])
     applied_bonuses: List[str] = field(default_factory=list)
@@ -173,10 +175,8 @@ def calculate_chemistry(
 
             # 4. Special Connections (Elite / Legendary)
             pair_key = tuple(sorted([p1.player_id, p2.player_id]))
-            # Also support name-based or id-based lookup
             conn = special_connections.get(pair_key)
             if not conn:
-                # check reverse or direct
                 conn = special_connections.get((p1.player_id, p2.player_id)) or special_connections.get((p2.player_id, p1.player_id))
 
             if conn:
@@ -259,7 +259,6 @@ def project_season_record(score: float) -> Tuple[str, str, str]:
             record = "9-8"
         return record, "Wild Card Bubble", "🫧"
     else:
-        # Scale < 115 into <= 8-9
         if score >= 105.0:
             record = "8-9"
         elif score >= 95.0:

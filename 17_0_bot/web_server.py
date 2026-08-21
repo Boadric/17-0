@@ -76,7 +76,7 @@ async def api_health(request: web.Request) -> web.Response:
 
 
 async def api_roll(request: web.Request) -> web.Response:
-    """Rolls a random team and season, returning available skill weapons."""
+    """Rolls a random team and season, returning available skill weapons with headshots."""
     team, season = await get_random_team_season()
     meta = get_team_metadata(team, season)
     players = await search_players_on_team(team=team, season=season, limit=25)
@@ -182,6 +182,8 @@ async def api_calculate(request: web.Request) -> web.Response:
             base_fppg=float(p_data.get("base_fppg", 0.0)),
             college=p_data.get("college"),
             draft_year=p_data.get("draft_year"),
+            headshot_url=p_data.get("headshot_url"),
+            espn_id=p_data.get("espn_id"),
             career_teams=career_teams,
         )
 
@@ -226,6 +228,8 @@ async def api_calculate(request: web.Request) -> web.Response:
             "chemistry_fppg": p.chemistry_fppg,
             "total_fppg": p.total_fppg,
             "applied_bonuses": p.applied_bonuses,
+            "headshot_url": p.headshot_url,
+            "espn_id": p.espn_id,
         }
 
     return web.json_response({
@@ -271,6 +275,8 @@ async def api_leaderboard_save(request: web.Request) -> web.Response:
             base_fppg=float(p_data.get("base_fppg", 0.0)),
             college=p_data.get("college"),
             draft_year=p_data.get("draft_year"),
+            headshot_url=p_data.get("headshot_url"),
+            espn_id=p_data.get("espn_id"),
         )
 
     player_ids = [p.player_id for p in roster.values()]

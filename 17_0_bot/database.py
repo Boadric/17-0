@@ -93,14 +93,13 @@ async def search_players_on_team(
 ) -> List[Dict[str, Any]]:
     """
     Searches for offensive players on a specific team and season.
-    Filters strictly by eligible positions.
+    Filters strictly by eligible positions and returns headshot URLs.
     """
     canon_team = get_canonical_team(team)
     async with get_db(db_path) as db:
         conditions = ["ps.team = ?", "ps.season = ?"]
         params: List[Any] = [canon_team, season]
 
-        # Support both position_filter (single) and positions (list of eligible)
         if position_filter and position_filter.upper() in ("QB", "RB", "WR", "TE"):
             conditions.append("ps.position = ?")
             params.append(position_filter.upper())
@@ -111,7 +110,7 @@ async def search_players_on_team(
                 conditions.append(f"ps.position IN ({placeholders})")
                 params.extend(clean_positions)
             else:
-                conditions.append("1=0")  # No eligible positions
+                conditions.append("1=0")
         else:
             conditions.append("ps.position IN ('QB', 'RB', 'WR', 'TE')")
 
@@ -124,6 +123,7 @@ async def search_players_on_team(
         sql = f"""
         SELECT 
             p.player_id, p.name, p.college, p.draft_year, p.draft_round, p.draft_pick,
+            p.headshot_url, p.espn_id,
             ps.season, ps.team, ps.position, ps.games_played, ps.ppr_fppg
         FROM player_seasons ps
         JOIN players p ON ps.player_id = p.player_id
@@ -143,12 +143,13 @@ async def get_player_by_id_and_team(
     season: int,
     db_path: str = DB_PATH,
 ) -> Optional[Dict[str, Any]]:
-    """Fetches full player details for a specific player_id on a team/season."""
+    """Fetches full player details including headshot for a specific player_id on a team/season."""
     canon_team = get_canonical_team(team)
     async with get_db(db_path) as db:
         sql = """
         SELECT 
             p.player_id, p.name, p.college, p.draft_year, p.draft_round, p.draft_pick,
+            p.headshot_url, p.espn_id,
             ps.season, ps.team, ps.position, ps.games_played, ps.ppr_fppg
         FROM player_seasons ps
         JOIN players p ON ps.player_id = p.player_id
@@ -179,6 +180,7 @@ async def get_player_by_name_and_team(
         sql_exact = """
         SELECT 
             p.player_id, p.name, p.college, p.draft_year, p.draft_round, p.draft_pick,
+            p.headshot_url, p.espn_id,
             ps.season, ps.team, ps.position, ps.games_played, ps.ppr_fppg
         FROM player_seasons ps
         JOIN players p ON ps.player_id = p.player_id
@@ -195,6 +197,7 @@ async def get_player_by_name_and_team(
         sql_starts = """
         SELECT 
             p.player_id, p.name, p.college, p.draft_year, p.draft_round, p.draft_pick,
+            p.headshot_url, p.espn_id,
             ps.season, ps.team, ps.position, ps.games_played, ps.ppr_fppg
         FROM player_seasons ps
         JOIN players p ON ps.player_id = p.player_id
@@ -212,6 +215,7 @@ async def get_player_by_name_and_team(
         sql_sub = """
         SELECT 
             p.player_id, p.name, p.college, p.draft_year, p.draft_round, p.draft_pick,
+            p.headshot_url, p.espn_id,
             ps.season, ps.team, ps.position, ps.games_played, ps.ppr_fppg
         FROM player_seasons ps
         JOIN players p ON ps.player_id = p.player_id
@@ -309,6 +313,7 @@ async def save_to_leaderboard(
             "chemistry_fppg": player.chemistry_fppg,
             "total_fppg": player.total_fppg,
             "applied_bonuses": player.applied_bonuses,
+            "headshot_url": getattr(player, "headshot_url", None),
         }
 
     roster_json = json.dumps(roster_data)
