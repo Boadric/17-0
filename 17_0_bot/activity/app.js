@@ -458,16 +458,11 @@ function renderDraftPack() {
     card.className = `draft-card ${isDrafted ? 'drafted' : ''}`;
     card.style.animationDelay = `${idx * 0.04}s`;
 
-    // 3D Horizontal Fan Transform Math with actual bounding width
-    const fanTransform = window.CardsEngine.calculateFanTransform(totalCards, idx, containerWidth);
-    card.style.transform = `translate3d(calc(-50% + ${fanTransform.translateX}px), calc(-50% + ${fanTransform.translateY}px), 0px) rotate(${fanTransform.rotation}deg)`;
-    card.style.zIndex = `${fanTransform.zIndex}`;
-
     // Generate Card HTML using CardsEngine
     card.innerHTML = window.CardsEngine.createCardHTML(p, { photoUrl, isDrafted });
 
-    // Attach 3D physics tilt
-    window.CardsEngine.attach3DTilt(card, fanTransform);
+    // Attach 3D physics tilt on hover
+    window.CardsEngine.attach3DTilt(card);
 
     if (!isDrafted) {
       card.onclick = () => draftPlayer(p, card);

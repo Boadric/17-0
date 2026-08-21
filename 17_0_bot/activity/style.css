@@ -522,43 +522,46 @@ html, body {
   cursor: pointer;
 }
 
-/* 3D Arc Fan Stage */
-.cards-fan-arc-container {
-  flex: 1 1 auto;
+/* 3D Trading Card Tabletop Stage */
+#player-card-pack, .cards-fan-arc-container {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  gap: 1.25rem;
   width: 100%;
   height: 100%;
-  min-height: 240px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  max-height: 480px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 1rem;
   position: relative;
-  perspective: 1200px;
-  overflow: visible;
 }
 
-/* 3D Collectible Trading Card */
-.draft-card {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: clamp(135px, 12vw, 175px);
-  height: clamp(195px, 27vh, 250px);
+/* 3D Collectible Trading Card (Standard 5/7 Ratio) */
+.draft-card, .player-card, .booster-card, .card {
+  width: auto;
+  height: 100%;
+  max-height: 380px;
+  aspect-ratio: 5 / 7; /* Standard trading card ratio */
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  position: relative;
   border-radius: 12px;
   cursor: pointer;
-  perspective: 1000px;
-  transform-origin: 50% 120%;
   transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
   animation: cardDealFanIn 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
 @keyframes cardDealFanIn {
-  0% { opacity: 0; transform: translateY(60px) scale(0.5) rotate(15deg); }
-  100% { opacity: 1; }
+  0% { opacity: 0; transform: translateY(40px) scale(0.85); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .card-inner {
   width: 100%;
   height: 100%;
+  aspect-ratio: 5 / 7;
   background: linear-gradient(145deg, #131e36, #090e1a);
   border-radius: 12px;
   border: 2px solid var(--border-bright);
@@ -803,17 +806,37 @@ html, body {
 }
 
 #table-cards-grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 6px;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  gap: 0.85rem;
+  width: 100%;
   flex: 1;
   margin-top: 4px;
 }
 
 .table-card-slot {
-  height: 100%;
+  height: 105px;
+  aspect-ratio: 5 / 7;
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   border-radius: 8px;
   position: relative;
+  overflow: hidden;
+}
+
+.table-card-slot .card-inner,
+.table-card-slot .slot-placeholder {
+  width: 100%;
+  height: 100%;
+  aspect-ratio: 5 / 7;
+}
+
+.table-card-slot .card-inner {
+  border-radius: 8px;
 }
 
 .slot-placeholder {
