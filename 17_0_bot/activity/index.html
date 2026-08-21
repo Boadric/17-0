@@ -16,6 +16,52 @@
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
   <link rel="stylesheet" href="/static/style.css">
+  <style>
+    /* Inline Fallback Protection for Discord Proxy */
+    :root {
+      --bg-dark: #070a13;
+      --bg-panel: #0d1424;
+      --bg-card: #111a2e;
+      --border-color: #1e293b;
+      --border-bright: #334155;
+      --accent-blue: #0ea5e9;
+      --accent-gold: #f59e0b;
+      --pos-qb: #9333ea;
+      --pos-rb: #16a34a;
+      --pos-wr: #0284c7;
+      --pos-te: #ea580c;
+      --pos-flx: #d97706;
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+    body { font-family: 'Inter', sans-serif; background: #070a13; color: #f8fafc; height: 100vh; width: 100vw; overflow: hidden; }
+    #app-container { width: 100vw; height: 100vh; display: flex; flex-direction: column; background: radial-gradient(circle at 50% 10%, #111e38 0%, #070a13 70%); position: relative; overflow: hidden; }
+    #game-header { height: 56px; min-height: 56px; background: rgba(10, 16, 30, 0.95); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; padding: 0 16px; }
+    #board-container { flex: 1; display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 14px; padding: 14px; overflow: hidden; height: calc(100vh - 56px); }
+    #tabletop-arena { background: radial-gradient(circle at 50% 30%, #0d1a33 0%, #070d1a 100%); border: 1px solid var(--border-color); border-radius: 16px; padding: 14px; display: flex; flex-direction: column; justify-content: space-between; overflow-y: auto; }
+    #table-cards-grid { display: flex; flex-direction: column; gap: 12px; margin: auto 0; }
+    .table-row { display: grid; gap: 10px; }
+    .pass-row { grid-template-columns: repeat(4, 1fr); }
+    .ground-row { grid-template-columns: repeat(3, 1fr); max-width: 85%; margin: 0 auto; width: 100%; }
+    .table-card-slot { height: 180px; border-radius: 12px; position: relative; }
+    .slot-placeholder { width: 100%; height: 100%; border: 2px dashed #22324f; border-radius: 12px; background: rgba(14, 23, 43, 0.5); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; }
+    .trading-card { width: 100%; height: 100%; background: linear-gradient(145deg, #131d33, #090e1a); border-radius: 12px; border: 2px solid var(--border-bright); display: flex; flex-direction: column; overflow: hidden; position: relative; }
+    .trading-card.chemistry-active { border-color: var(--accent-gold) !important; box-shadow: 0 0 24px rgba(245, 158, 11, 0.5); }
+    .card-photo-wrap { flex: 1; position: relative; overflow: hidden; background: radial-gradient(circle at 50% 30%, rgba(255, 255, 255, 0.12), rgba(0, 0, 0, 0.7)); display: flex; align-items: center; justify-content: center; }
+    .card-headshot-img { width: 100%; height: 100%; object-fit: cover; object-position: top center; }
+    .card-info-wrap { padding: 4px 6px 6px; background: rgba(10, 16, 28, 0.95); display: flex; flex-direction: column; gap: 2px; }
+    #draft-deck-section { background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 10px; overflow: hidden; }
+    .cards-pack-grid { flex: 1; display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; overflow-y: auto; padding: 4px 2px; }
+    .draft-card { height: 175px; background: linear-gradient(145deg, #131e36, #0c1424); border: 2px solid var(--border-bright); border-radius: 12px; display: flex; flex-direction: column; overflow: hidden; cursor: pointer; position: relative; }
+    @media (max-width: 850px) {
+      #board-container { grid-template-columns: 1fr; overflow-y: auto; height: auto; }
+      .table-card-slot { height: 140px; }
+      .draft-card { height: 150px; }
+      .cards-pack-grid { max-height: 260px; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); }
+    }
+  </style>
 </head>
 <body>
   <div id="app-container">
@@ -53,10 +99,10 @@
       </div>
     </header>
 
-    <!-- Main Game Board: Virtual Gridiron Tabletop -->
+    <!-- Main Game Board: 2-Column Gridiron Layout -->
     <main id="board-container">
       
-      <!-- Virtual Tabletop Area -->
+      <!-- Left Column: Virtual Tabletop Area -->
       <section id="tabletop-arena">
         <div class="tabletop-header">
           <div class="section-title">
@@ -133,7 +179,7 @@
         <div id="chemistry-feed" class="chem-feed-container"></div>
       </section>
 
-      <!-- Active Franchise Roll & Draft Pack Section -->
+      <!-- Right Column: Active Franchise Roll & Available Weapons Pack -->
       <section id="draft-deck-section">
         
         <!-- Active Franchise Roll Card -->
