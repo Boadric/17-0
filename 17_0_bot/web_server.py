@@ -5,6 +5,7 @@ import os
 import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+import aiohttp
 from aiohttp import web
 
 # Add package base directory to sys.path
@@ -73,6 +74,32 @@ def get_team_metadata(team: str, season: int) -> Dict[str, Any]:
 async def api_health(request: web.Request) -> web.Response:
     """Health check endpoint."""
     return web.json_response({"status": "ok", "app": "17-0 Discord Activity"})
+
+
+async def api_image_proxy(request: web.Request) -> web.Response:
+    """Proxies external player headshots to bypass Discord iframe Content Security Policy."""
+    url = request.query.get("url")
+    if not url or not url.startswith("http"):
+        return web.Response(status=400)
+
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, timeout=aiohttp.ClientTimeout(total=4)) as resp:
+                if resp.status == 200:
+                    body = await resp.read()
+                    content_type = resp.headers.get("Content-Type", "image/png")
+                    return web.Response(
+                        body=body,
+                        content_type=content_type,
+                        headers={
+                            "Access-Control-Allow-Origin": "*",
+                            "Cache-Control": "public, max-age=86400",
+                        },
+                    )
+    except Exception as e:
+        logger.debug("Image proxy fetch error for %s: %s", url, e)
+
+    return web.Response(status=404)
 
 
 async def api_roll(request: web.Request) -> web.Response:
@@ -327,6 +354,7 @@ def create_app() -> web.Application:
 
     # API routes
     app.router.add_get("/api/health", api_health)
+    app.router.add_get("/api/image-proxy", api_image_proxy)
     app.router.add_get("/api/roll", api_roll)
     app.router.add_post("/api/reroll-team", api_reroll_team)
     app.router.add_post("/api/reroll-season", api_reroll_season)

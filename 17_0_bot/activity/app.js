@@ -97,11 +97,34 @@ function getEligiblePositions() {
   return positions.filter((p) => autoAssignSlot(p) !== null);
 }
 
+// Robust image URL helper with proxy fallback for Discord iframe CSP
+function getPlayerPhotoUrl(p) {
+  if (!p) return '';
+  const rawUrl = p.headshot_url || (p.espn_id ? `https://a.espncdn.com/combiner/i?img=/i/headshots/nfl/players/full/${p.espn_id}.png&w=350&h=254` : '');
+  if (!rawUrl) return '';
+  return `/api/image-proxy?url=${encodeURIComponent(rawUrl)}`;
+}
+
+// Robust API fetch helper
+async function fetchApi(url, options = {}) {
+  try {
+    const res = await fetch(url, options);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch (e) {
+    if (url.startsWith('/')) {
+      const rel = url.substring(1);
+      const res = await fetch(rel, options);
+      return await res.json();
+    }
+    throw e;
+  }
+}
+
 // Fetch Initial Roll from API
 async function fetchRoll() {
   try {
-    const res = await fetch('/api/roll');
-    const data = await res.json();
+    const data = await fetchApi('/api/roll');
     state.team = data.team;
     state.season = data.season;
     state.teamName = data.team_name;
@@ -125,7 +148,7 @@ async function rerollTeam() {
   el.rerollTeamBtn.disabled = state.teamRerollsLeft <= 0;
 
   try {
-    const res = await fetch('/api/reroll-team', {
+    const data = await fetchApi('/api/reroll-team', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -134,7 +157,6 @@ async function rerollTeam() {
         positions: getEligiblePositions(),
       }),
     });
-    const data = await res.json();
     state.team = data.team;
     state.teamName = data.team_name;
     state.color = data.color;
@@ -156,7 +178,7 @@ async function rerollSeason() {
   el.rerollSeasonBtn.disabled = state.seasonRerollsLeft <= 0;
 
   try {
-    const res = await fetch('/api/reroll-season', {
+    const data = await fetchApi('/api/reroll-season', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -165,7 +187,6 @@ async function rerollSeason() {
         positions: getEligiblePositions(),
       }),
     });
-    const data = await res.json();
     state.season = data.season;
     state.teamName = data.team_name;
     state.availablePlayers = data.players || [];
@@ -204,7 +225,6 @@ async function draftPlayer(player) {
   // Recalculate score via API
   await recalculateScore();
 
-  // Check if chemistry bonus was triggered
   if (state.breakdown.active_links.length > 0) {
     window.soundEngine.playChemistry();
   }
@@ -232,15 +252,13 @@ async function draftPlayer(player) {
 // Recalculate Score
 async function recalculateScore() {
   try {
-    const res = await fetch('/api/calculate', {
+    const data = await fetchApi('/api/calculate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ roster: state.roster }),
     });
-    const data = await res.json();
     state.breakdown = data;
 
-    // Update roster with latest applied bonuses
     if (data.roster) {
       Object.keys(data.roster).forEach((slot) => {
         if (state.roster[slot] && data.roster[slot]) {
@@ -279,9 +297,7 @@ function renderTabletopCards() {
       const chemText = hasChem ? p.applied_bonuses.join(' · ') : '';
       const college = p.college || 'N/A';
       const draftYear = p.draft_year ? `'${String(p.draft_year).slice(2)} Draft` : 'UDFA';
-
-      // Headshot URL with fallback
-      const photoSrc = p.headshot_url || (p.espn_id ? `https://a.espncdn.com/combiner/i?img=/i/headshots/nfl/players/full/${p.espn_id}.png&w=350&h=254` : '');
+      const photoSrc = getPlayerPhotoUrl(p);
 
       slotContainer.innerHTML = `
         <div class="trading-card ${hasChem ? 'chemistry-active' : ''}">
@@ -305,7 +321,6 @@ function renderTabletopCards() {
         </div>
       `;
     } else {
-      // Empty placeholder
       const posClass = slot.startsWith('WR') ? 'wr' : slot.startsWith('RB') ? 'rb' : slot.toLowerCase();
       const hint = slot === 'FLX' ? 'RB / WR / TE' : 'Open Slot';
       slotContainer.innerHTML = `
@@ -338,14 +353,12 @@ function renderDraftPack() {
   const eligible = getEligiblePositions();
   let filtered = state.availablePlayers;
 
-  // Filter by position tab
   if (state.positionFilter !== 'ALL') {
     filtered = filtered.filter((p) => p.position.toUpperCase() === state.positionFilter);
   } else {
     filtered = filtered.filter((p) => eligible.includes(p.position.toUpperCase()));
   }
 
-  // Filter by search query
   if (state.searchQuery.trim()) {
     const q = state.searchQuery.toLowerCase();
     filtered = filtered.filter((p) => p.name.toLowerCase().includes(q));
@@ -374,8 +387,7 @@ function renderDraftPack() {
     const fppg = parseFloat(p.ppr_fppg || 0).toFixed(1);
     const college = p.college || 'N/A';
     const draftYear = p.draft_year ? `'${String(p.draft_year).slice(2)}` : 'UDFA';
-
-    const photoSrc = p.headshot_url || (p.espn_id ? `https://a.espncdn.com/combiner/i?img=/i/headshots/nfl/players/full/${p.espn_id}.png&w=350&h=254` : '');
+    const photoSrc = getPlayerPhotoUrl(p);
 
     card.innerHTML = `
       <div class="card-header-bar">
@@ -450,7 +462,6 @@ function showGameOverModal() {
   document.getElementById('modal-chem').textContent = `+${b.chemistry_fppg.toFixed(1)}`;
   document.getElementById('modal-total').textContent = `${b.total_score.toFixed(1)} FPPG`;
 
-  // Roster Recap
   const modalRosterList = document.getElementById('modal-roster-list');
   modalRosterList.innerHTML = '';
   Object.entries(state.roster).forEach(([slot, p]) => {
@@ -464,7 +475,6 @@ function showGameOverModal() {
     modalRosterList.appendChild(item);
   });
 
-  // Chemistry Links Recap
   const modalLinksList = document.getElementById('modal-links-list');
   modalLinksList.innerHTML = '';
   if (b.active_links && b.active_links.length > 0) {
@@ -488,7 +498,7 @@ async function saveGameToLeaderboard() {
   btn.textContent = 'Saving...';
 
   try {
-    const res = await fetch('/api/leaderboard/save', {
+    const data = await fetchApi('/api/leaderboard/save', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -497,7 +507,6 @@ async function saveGameToLeaderboard() {
         roster: state.roster,
       }),
     });
-    const data = await res.json();
     if (data.success) {
       btn.textContent = 'Saved to Hall of Fame! ✅';
     }
@@ -516,8 +525,7 @@ async function showLeaderboardModal() {
   listEl.innerHTML = '<div class="loading-spinner">Loading Hall of Fame...</div>';
 
   try {
-    const res = await fetch('/api/leaderboard');
-    const data = await res.json();
+    const data = await fetchApi('/api/leaderboard');
     const entries = data.leaderboard || [];
 
     if (entries.length === 0) {
@@ -581,7 +589,6 @@ function resetGame() {
 
 // Event Listeners
 function setupEvents() {
-  // Filter Tabs
   el.filterTabs.forEach((tab) => {
     tab.onclick = () => {
       state.positionFilter = tab.dataset.pos;
@@ -591,11 +598,9 @@ function setupEvents() {
     };
   });
 
-  // Rerolls
   el.rerollTeamBtn.onclick = rerollTeam;
   el.rerollSeasonBtn.onclick = rerollSeason;
 
-  // Search
   el.searchInput.oninput = (e) => {
     state.searchQuery = e.target.value;
     el.clearSearch.style.display = state.searchQuery ? 'block' : 'none';
@@ -609,7 +614,6 @@ function setupEvents() {
     renderDraftPack();
   };
 
-  // Modals & Navigation
   el.soundBtn.onclick = () => {
     const isEnabled = window.soundEngine.toggle();
     el.soundBtn.textContent = isEnabled ? '🔊' : '🔇';
