@@ -42,6 +42,93 @@ class SoundEngine {
     osc.stop(this.ctx.currentTime + 0.04);
   }
 
+  // Realistic Foil Pack Tear SFX (Metallic tear burst + rising pitch whoosh)
+  playPackTear() {
+    if (!this.enabled) return;
+    this.init();
+    if (!this.ctx) return;
+
+    const now = this.ctx.currentTime;
+
+    // 1. Noise buffer for wrapper tear crunch
+    const bufferSize = this.ctx.sampleRate * 0.25;
+    const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = Math.random() * 2 - 1;
+    }
+
+    const noise = this.ctx.createBufferSource();
+    noise.buffer = buffer;
+
+    const filter = this.ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.setValueAtTime(2500, now);
+    filter.frequency.exponentialRampToValueAtTime(600, now + 0.22);
+    filter.Q.setValueAtTime(3.0, now);
+
+    const noiseGain = this.ctx.createGain();
+    noiseGain.gain.setValueAtTime(0.25, now);
+    noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+
+    noise.connect(filter);
+    filter.connect(noiseGain);
+    noiseGain.connect(this.ctx.destination);
+
+    // 2. High-energy metallic rip tone
+    const osc = this.ctx.createOscillator();
+    const oscGain = this.ctx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(450, now);
+    osc.frequency.exponentialRampToValueAtTime(1400, now + 0.08);
+    osc.frequency.exponentialRampToValueAtTime(200, now + 0.2);
+
+    oscGain.gain.setValueAtTime(0.15, now);
+    oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+
+    osc.connect(oscGain);
+    oscGain.connect(this.ctx.destination);
+
+    noise.start(now);
+    osc.start(now);
+    noise.stop(now + 0.25);
+    osc.stop(now + 0.25);
+  }
+
+  // Snappy card dealing / flick sound
+  playCardDeal(delay = 0) {
+    if (!this.enabled) return;
+    this.init();
+    if (!this.ctx) return;
+
+    const t = this.ctx.currentTime + delay;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(500 + Math.random() * 200, t);
+    osc.frequency.exponentialRampToValueAtTime(150, t + 0.06);
+
+    gain.gain.setValueAtTime(0.12, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.06);
+
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start(t);
+    osc.stop(t + 0.06);
+  }
+
+  // Fast cards shuffle off-screen whoosh
+  playCardShuffle() {
+    if (!this.enabled) return;
+    this.init();
+    if (!this.ctx) return;
+
+    for (let i = 0; i < 4; i++) {
+      this.playCardDeal(i * 0.04);
+    }
+  }
+
   playDraft() {
     if (!this.enabled) return;
     this.init();

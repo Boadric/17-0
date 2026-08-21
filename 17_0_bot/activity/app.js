@@ -1,5 +1,5 @@
 /**
- * 17-0 NFL Draft & Chemistry Strategy Game — Virtual Tabletop Client
+ * 17-0 NFL Draft & Chemistry Strategy Game — Pack Opening & Card Fan Client
  */
 
 // Application State
@@ -16,6 +16,8 @@ const state = {
   searchQuery: '',
   teamRerollsLeft: 1,
   seasonRerollsLeft: 1,
+  stage: 'PACK', // 'PACK' or 'FANNED'
+  isTearing: false,
   roster: {
     QB: null,
     RB1: null,
@@ -44,20 +46,26 @@ const state = {
 // DOM Elements
 const el = {
   currentRound: document.getElementById('current-round'),
-  rollBanner: document.getElementById('roll-banner'),
-  rollEmoji: document.getElementById('roll-emoji'),
-  rollTeamCode: document.getElementById('roll-team-code'),
-  rollSeason: document.getElementById('roll-season'),
-  rollTeamName: document.getElementById('roll-team-name'),
+  // Booster Pack View
+  packStageView: document.getElementById('pack-stage-view'),
+  boosterPack: document.getElementById('booster-pack'),
+  packEmoji: document.getElementById('pack-emoji'),
+  packSeason: document.getElementById('pack-season'),
+  packTeamName: document.getElementById('pack-team-name'),
   teamRerollsLeft: document.getElementById('team-rerolls-left'),
   seasonRerollsLeft: document.getElementById('season-rerolls-left'),
   rerollTeamBtn: document.getElementById('reroll-team-btn'),
   rerollSeasonBtn: document.getElementById('reroll-season-btn'),
+  // Fanned Stage View
+  fannedStageView: document.getElementById('fanned-stage-view'),
+  fannedEmoji: document.getElementById('fanned-emoji'),
+  fannedSeason: document.getElementById('fanned-season'),
+  fannedTeamName: document.getElementById('fanned-team-name'),
   searchInput: document.getElementById('search-input'),
   clearSearch: document.getElementById('clear-search'),
   playerCardPack: document.getElementById('player-card-pack'),
-  eligibleHint: document.getElementById('eligible-positions-hint'),
   filterTabs: document.querySelectorAll('.filter-tab'),
+  // Roster Bar
   chemistryFeed: document.getElementById('chemistry-feed'),
   activeChemCount: document.getElementById('active-chem-count'),
   hudTierBadge: document.getElementById('hud-tier-badge'),
@@ -131,17 +139,53 @@ async function fetchRoll() {
     state.color = data.color;
     state.emoji = data.emoji;
     state.availablePlayers = data.players || [];
-    renderRollCard();
-    renderDraftPack();
-    updateFilterTabs();
+    renderPackStage();
   } catch (err) {
     console.error('Error fetching roll:', err);
   }
 }
 
+// Render the 3D Foil Booster Pack Stage
+function renderPackStage() {
+  state.stage = 'PACK';
+  state.isTearing = false;
+  el.boosterPack.classList.remove('tearing');
+
+  el.packEmoji.textContent = state.emoji;
+  el.packSeason.textContent = state.season;
+  el.packTeamName.textContent = state.teamName;
+  el.boosterPack.style.borderColor = state.color || '#fbbf24';
+
+  el.fannedEmoji.textContent = state.emoji;
+  el.fannedSeason.textContent = state.season;
+  el.fannedTeamName.textContent = state.teamName;
+
+  el.packStageView.style.display = 'flex';
+  el.fannedStageView.style.display = 'none';
+}
+
+// Tear Open the Booster Pack & Fan Out Cards
+function ripOpenPack() {
+  if (state.isTearing) return;
+  state.isTearing = true;
+
+  window.soundEngine.playPackTear();
+  el.boosterPack.classList.add('tearing');
+
+  setTimeout(() => {
+    state.stage = 'FANNED';
+    el.packStageView.style.display = 'none';
+    el.fannedStageView.style.display = 'flex';
+    renderDraftPack();
+    updateFilterTabs();
+  }, 400);
+}
+
 // Reroll Team
-async function rerollTeam() {
+async function rerollTeam(e) {
+  if (e) e.stopPropagation();
   if (state.teamRerollsLeft <= 0) return;
+
   window.soundEngine.playReroll();
   state.teamRerollsLeft -= 1;
   el.teamRerollsLeft.textContent = state.teamRerollsLeft;
@@ -162,16 +206,17 @@ async function rerollTeam() {
     state.color = data.color;
     state.emoji = data.emoji;
     state.availablePlayers = data.players || [];
-    renderRollCard();
-    renderDraftPack();
+    renderPackStage();
   } catch (err) {
     console.error('Error rerolling team:', err);
   }
 }
 
 // Reroll Season
-async function rerollSeason() {
+async function rerollSeason(e) {
+  if (e) e.stopPropagation();
   if (state.seasonRerollsLeft <= 0) return;
+
   window.soundEngine.playReroll();
   state.seasonRerollsLeft -= 1;
   el.seasonRerollsLeft.textContent = state.seasonRerollsLeft;
@@ -190,21 +235,22 @@ async function rerollSeason() {
     state.season = data.season;
     state.teamName = data.team_name;
     state.availablePlayers = data.players || [];
-    renderRollCard();
-    renderDraftPack();
+    renderPackStage();
   } catch (err) {
     console.error('Error rerolling season:', err);
   }
 }
 
-// Draft Player
-async function draftPlayer(player) {
+// Draft Player with Swoop & Unpicked Shuffle-Off
+async function draftPlayer(player, cardElement) {
   const slot = autoAssignSlot(player.position);
   if (!slot) {
     alert(`All eligible roster slots for ${player.position} are filled!`);
     return;
   }
 
+  // Highlight chosen card
+  cardElement.classList.add('chosen');
   window.soundEngine.playDraft();
 
   // Assign player to roster
@@ -222,6 +268,10 @@ async function draftPlayer(player) {
     espn_id: player.espn_id || null,
   };
 
+  // Trigger shuffle-away animation on unpicked cards
+  el.playerCardPack.classList.add('shuffling-away');
+  window.soundEngine.playCardShuffle();
+
   // Recalculate score via API
   await recalculateScore();
 
@@ -234,19 +284,22 @@ async function draftPlayer(player) {
   // Check game over
   const draftedCount = Object.values(state.roster).filter(Boolean).length;
   if (draftedCount >= state.totalRounds) {
-    showGameOverModal();
+    setTimeout(() => showGameOverModal(), 500);
     return;
   }
 
-  // Advance to next round
-  state.round += 1;
-  el.currentRound.textContent = state.round;
-  state.positionFilter = 'ALL';
-  state.searchQuery = '';
-  el.searchInput.value = '';
-  el.clearSearch.style.display = 'none';
+  // Advance to next round & show next booster pack
+  setTimeout(async () => {
+    state.round += 1;
+    el.currentRound.textContent = state.round;
+    state.positionFilter = 'ALL';
+    state.searchQuery = '';
+    el.searchInput.value = '';
+    el.clearSearch.style.display = 'none';
+    el.playerCardPack.classList.remove('shuffling-away');
 
-  await fetchRoll();
+    await fetchRoll();
+  }, 450);
 }
 
 // Recalculate Score
@@ -273,15 +326,6 @@ async function recalculateScore() {
   }
 }
 
-// Render Roll Card Banner
-function renderRollCard() {
-  el.rollEmoji.textContent = state.emoji;
-  el.rollTeamCode.textContent = state.team;
-  el.rollSeason.textContent = state.season;
-  el.rollTeamName.textContent = state.teamName;
-  el.rollBanner.style.borderColor = state.color || '#1e293b';
-}
-
 // Render Virtual Tabletop Trading Cards (The 7 Board Slots)
 function renderTabletopCards() {
   const slots = ['WR1', 'QB', 'WR2', 'TE', 'RB1', 'RB2', 'FLX'];
@@ -294,16 +338,13 @@ function renderTabletopCards() {
 
     if (p) {
       const hasChem = p.applied_bonuses && p.applied_bonuses.length > 0;
-      const chemText = hasChem ? p.applied_bonuses.join(' · ') : '';
-      const college = p.college || 'N/A';
-      const draftYear = p.draft_year ? `'${String(p.draft_year).slice(2)} Draft` : 'UDFA';
       const photoSrc = getPlayerPhotoUrl(p);
 
       slotContainer.innerHTML = `
         <div class="trading-card ${hasChem ? 'chemistry-active' : ''}">
           <div class="card-header-bar">
-            <span class="card-slot-tag slot-pos-badge ${p.position.toLowerCase()}">${slot}</span>
-            <span class="card-team-tag">${p.drafted_season} ${p.drafted_team}</span>
+            <span class="slot-pos-badge ${p.position.toLowerCase()}">${slot}</span>
+            <span class="card-team-tag">${p.drafted_team}</span>
           </div>
           <div class="card-photo-wrap">
             ${photoSrc ? `<img src="${photoSrc}" class="card-headshot-img" alt="${p.name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">` : ''}
@@ -311,8 +352,6 @@ function renderTabletopCards() {
           </div>
           <div class="card-info-wrap">
             <div class="card-player-name">${p.name}</div>
-            <div class="card-meta-line">${college} · ${draftYear}</div>
-            ${hasChem ? `<div class="card-chem-bonuses">⚡ ${chemText}</div>` : ''}
             <div class="card-fppg-badge">
               <span class="card-fppg-val">${p.base_fppg.toFixed(1)}</span>
               <span class="card-fppg-lbl">FPPG</span>
@@ -322,11 +361,10 @@ function renderTabletopCards() {
       `;
     } else {
       const posClass = slot.startsWith('WR') ? 'wr' : slot.startsWith('RB') ? 'rb' : slot.toLowerCase();
-      const hint = slot === 'FLX' ? 'RB / WR / TE' : 'Open Slot';
+      const hint = slot === 'FLX' ? 'RB/WR/TE' : 'Open';
       slotContainer.innerHTML = `
         <div class="slot-placeholder">
           <span class="slot-pos-badge ${posClass}">${slot}</span>
-          <span class="slot-add-icon">+</span>
           <span class="slot-hint">${hint}</span>
         </div>
       `;
@@ -342,13 +380,13 @@ function renderTabletopCards() {
     links.forEach((l) => {
       const pill = document.createElement('div');
       pill.className = 'chem-link-pill';
-      pill.innerHTML = `⚡ <strong>${l.player1_name}</strong> & <strong>${l.player2_name}</strong>: ${l.description} (+${l.team_bonus.toFixed(0)} Team)`;
+      pill.innerHTML = `⚡ <strong>${l.player1_name}</strong> & <strong>${l.player2_name}</strong>: ${l.description} (+${l.team_bonus.toFixed(0)})`;
       el.chemistryFeed.appendChild(pill);
     });
   }
 }
 
-// Render Available Weapons Pack
+// Render Fanned Out Available Weapons Pack
 function renderDraftPack() {
   const eligible = getEligiblePositions();
   let filtered = state.availablePlayers;
@@ -368,7 +406,7 @@ function renderDraftPack() {
 
   if (filtered.length === 0) {
     el.playerCardPack.innerHTML = `
-      <div style="grid-column: 1 / -1; text-align: center; padding: 20px; color: #64748b;">
+      <div style="grid-column: 1 / -1; text-align: center; padding: 30px; color: #64748b;">
         <span>❌ No available players found for your open slots.</span><br>
         <span>Try rerolling the team or year!</span>
       </div>
@@ -376,11 +414,12 @@ function renderDraftPack() {
     return;
   }
 
-  filtered.forEach((p) => {
+  filtered.forEach((p, idx) => {
     const card = document.createElement('div');
     const isDrafted = Object.values(state.roster).some((dp) => dp && dp.player_id === p.player_id);
 
     card.className = `draft-card ${isDrafted ? 'drafted' : ''}`;
+    card.style.animationDelay = `${idx * 0.03}s`;
 
     const pos = p.position.toUpperCase();
     const posClass = pos.toLowerCase();
@@ -409,10 +448,15 @@ function renderDraftPack() {
     `;
 
     if (!isDrafted) {
-      card.onclick = () => draftPlayer(p);
+      card.onclick = () => draftPlayer(p, card);
     }
 
     el.playerCardPack.appendChild(card);
+
+    // Staggered deal sound effect
+    if (idx < 6) {
+      window.soundEngine.playCardDeal(idx * 0.03);
+    }
   });
 }
 
@@ -430,8 +474,6 @@ function updateFilterTabs() {
       tab.classList.toggle('active', state.positionFilter === pos);
     }
   });
-
-  el.eligibleHint.textContent = `Eligible: ${eligible.join(', ')}`;
 }
 
 // Render Score Stats
@@ -589,6 +631,9 @@ function resetGame() {
 
 // Event Listeners
 function setupEvents() {
+  // Pack Rip interaction
+  el.boosterPack.onclick = ripOpenPack;
+
   el.filterTabs.forEach((tab) => {
     tab.onclick = () => {
       state.positionFilter = tab.dataset.pos;

@@ -16,54 +16,6 @@
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
   <link rel="stylesheet" href="/static/style.css">
-  <style>
-    /* Responsive Inline Fallback */
-    :root {
-      --bg-dark: #070a13;
-      --bg-panel: #0d1424;
-      --bg-card: #111a2e;
-      --border-color: #1e293b;
-      --border-bright: #334155;
-      --accent-blue: #0ea5e9;
-      --accent-gold: #f59e0b;
-      --pos-qb: #9333ea;
-      --pos-rb: #16a34a;
-      --pos-wr: #0284c7;
-      --pos-te: #ea580c;
-      --pos-flx: #d97706;
-      --text-primary: #f8fafc;
-      --text-secondary: #94a3b8;
-      --text-muted: #64748b;
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
-    html, body { width: 100vw !important; height: 100vh !important; margin: 0 !important; padding: 0 !important; overflow: hidden !important; background: #070a13; color: #f8fafc; font-family: 'Inter', sans-serif; }
-    #app-container { width: 100vw; height: 100vh; display: flex; flex-direction: column; background: radial-gradient(circle at 50% 10%, #111e38 0%, #070a13 70%); position: absolute; inset: 0; overflow: hidden; }
-    #game-header { height: 52px; min-height: 52px; background: rgba(10, 16, 30, 0.95); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; padding: 0 14px; }
-    #board-container { flex: 1; display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 12px; padding: 12px; overflow: hidden; height: calc(100vh - 52px); }
-    #tabletop-arena { background: radial-gradient(circle at 50% 30%, #0d1a33 0%, #070d1a 100%); border: 1px solid var(--border-color); border-radius: 14px; padding: 12px; display: flex; flex-direction: column; justify-content: space-between; overflow-y: auto; }
-    #table-cards-grid { display: flex; flex-direction: column; gap: 10px; margin: auto 0; }
-    .table-row { display: grid; gap: 8px; }
-    .pass-row { grid-template-columns: repeat(4, 1fr); }
-    .ground-row { grid-template-columns: repeat(3, 1fr); max-width: 85%; margin: 0 auto; width: 100%; }
-    .table-card-slot { height: 165px; border-radius: 10px; position: relative; }
-    .slot-placeholder { width: 100%; height: 100%; border: 2px dashed #22324f; border-radius: 10px; background: rgba(14, 23, 43, 0.5); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
-    .trading-card { width: 100%; height: 100%; background: linear-gradient(145deg, #131d33, #090e1a); border-radius: 10px; border: 2px solid var(--border-bright); display: flex; flex-direction: column; overflow: hidden; position: relative; }
-    .trading-card.chemistry-active { border-color: var(--accent-gold) !important; box-shadow: 0 0 20px rgba(245, 158, 11, 0.5); }
-    .card-photo-wrap { flex: 1; position: relative; overflow: hidden; background: radial-gradient(circle at 50% 30%, rgba(255, 255, 255, 0.12), rgba(0, 0, 0, 0.7)); display: flex; align-items: center; justify-content: center; min-height: 60px; }
-    .card-headshot-img { width: 100%; height: 100%; object-fit: cover; object-position: top center; }
-    .card-info-wrap { padding: 3px 5px 5px; background: rgba(10, 16, 28, 0.95); display: flex; flex-direction: column; gap: 1px; }
-    #draft-deck-section { background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 14px; padding: 12px; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; }
-    .cards-pack-grid { flex: 1; display: grid; grid-template-columns: repeat(auto-fill, minmax(115px, 1fr)); gap: 8px; overflow-y: auto; padding: 2px; min-height: 160px; }
-    .draft-card { height: 160px; background: linear-gradient(145deg, #131e36, #0c1424); border: 2px solid var(--border-bright); border-radius: 10px; display: flex; flex-direction: column; overflow: hidden; cursor: pointer; position: relative; }
-    @media (max-width: 900px) {
-      #board-container { grid-template-columns: 1fr !important; overflow-y: auto !important; height: calc(100vh - 52px) !important; display: flex !important; flex-direction: column !important; }
-      #tabletop-arena { min-height: 280px; flex-shrink: 0; }
-      .table-card-slot { height: 120px; }
-      #draft-deck-section { flex-shrink: 0; }
-      .cards-pack-grid { max-height: 320px; grid-template-columns: repeat(auto-fill, minmax(105px, 1fr)); }
-      .draft-card { height: 140px; }
-    }
-  </style>
 </head>
 <body>
   <div id="app-container">
@@ -101,15 +53,15 @@
       </div>
     </header>
 
-    <!-- Main Game Board: Adaptive Gridiron Layout -->
+    <!-- Main Game Board -->
     <main id="board-container">
       
-      <!-- Tabletop Arena -->
-      <section id="tabletop-arena">
-        <div class="tabletop-header">
+      <!-- 7-Slot Fantasy Roster Tabletop Bar -->
+      <section id="roster-bar-section">
+        <div class="roster-bar-header">
           <div class="section-title">
             <span class="field-icon">🏈</span>
-            <span>GRIDIRON DRAFT TABLE</span>
+            <span>YOUR 7-MAN ROSTER</span>
           </div>
           <div id="chemistry-summary" class="chem-counter">
             <span class="chem-bolt">⚡</span>
@@ -117,62 +69,48 @@
           </div>
         </div>
 
-        <!-- 7-Card Tactical Tabletop Grid -->
+        <!-- 7-Card Grid on Table -->
         <div id="table-cards-grid">
-          <!-- Row 1: Pass Attack (WR1, QB, WR2, TE) -->
-          <div class="table-row pass-row">
-            <div class="table-card-slot" id="slot-WR1" data-slot="WR1">
-              <div class="slot-placeholder">
-                <span class="slot-pos-badge wr">WR1</span>
-                <span class="slot-add-icon">+</span>
-                <span class="slot-hint">Open Slot</span>
-              </div>
-            </div>
-            <div class="table-card-slot" id="slot-QB" data-slot="QB">
-              <div class="slot-placeholder">
-                <span class="slot-pos-badge qb">QB</span>
-                <span class="slot-add-icon">+</span>
-                <span class="slot-hint">Open Slot</span>
-              </div>
-            </div>
-            <div class="table-card-slot" id="slot-WR2" data-slot="WR2">
-              <div class="slot-placeholder">
-                <span class="slot-pos-badge wr">WR2</span>
-                <span class="slot-add-icon">+</span>
-                <span class="slot-hint">Open Slot</span>
-              </div>
-            </div>
-            <div class="table-card-slot" id="slot-TE" data-slot="TE">
-              <div class="slot-placeholder">
-                <span class="slot-pos-badge te">TE</span>
-                <span class="slot-add-icon">+</span>
-                <span class="slot-hint">Open Slot</span>
-              </div>
+          <div class="table-card-slot" id="slot-WR1" data-slot="WR1">
+            <div class="slot-placeholder">
+              <span class="slot-pos-badge wr">WR1</span>
+              <span class="slot-hint">Open</span>
             </div>
           </div>
-
-          <!-- Row 2: Ground & Flex (RB1, RB2, FLX) -->
-          <div class="table-row ground-row">
-            <div class="table-card-slot" id="slot-RB1" data-slot="RB1">
-              <div class="slot-placeholder">
-                <span class="slot-pos-badge rb">RB1</span>
-                <span class="slot-add-icon">+</span>
-                <span class="slot-hint">Open Slot</span>
-              </div>
+          <div class="table-card-slot" id="slot-QB" data-slot="QB">
+            <div class="slot-placeholder">
+              <span class="slot-pos-badge qb">QB</span>
+              <span class="slot-hint">Open</span>
             </div>
-            <div class="table-card-slot" id="slot-RB2" data-slot="RB2">
-              <div class="slot-placeholder">
-                <span class="slot-pos-badge rb">RB2</span>
-                <span class="slot-add-icon">+</span>
-                <span class="slot-hint">Open Slot</span>
-              </div>
+          </div>
+          <div class="table-card-slot" id="slot-WR2" data-slot="WR2">
+            <div class="slot-placeholder">
+              <span class="slot-pos-badge wr">WR2</span>
+              <span class="slot-hint">Open</span>
             </div>
-            <div class="table-card-slot" id="slot-FLX" data-slot="FLX">
-              <div class="slot-placeholder">
-                <span class="slot-pos-badge flx">FLX</span>
-                <span class="slot-add-icon">+</span>
-                <span class="slot-hint">RB / WR / TE</span>
-              </div>
+          </div>
+          <div class="table-card-slot" id="slot-TE" data-slot="TE">
+            <div class="slot-placeholder">
+              <span class="slot-pos-badge te">TE</span>
+              <span class="slot-hint">Open</span>
+            </div>
+          </div>
+          <div class="table-card-slot" id="slot-RB1" data-slot="RB1">
+            <div class="slot-placeholder">
+              <span class="slot-pos-badge rb">RB1</span>
+              <span class="slot-hint">Open</span>
+            </div>
+          </div>
+          <div class="table-card-slot" id="slot-RB2" data-slot="RB2">
+            <div class="slot-placeholder">
+              <span class="slot-pos-badge rb">RB2</span>
+              <span class="slot-hint">Open</span>
+            </div>
+          </div>
+          <div class="table-card-slot" id="slot-FLX" data-slot="FLX">
+            <div class="slot-placeholder">
+              <span class="slot-pos-badge flx">FLX</span>
+              <span class="slot-hint">RB/WR/TE</span>
             </div>
           </div>
         </div>
@@ -181,59 +119,94 @@
         <div id="chemistry-feed" class="chem-feed-container"></div>
       </section>
 
-      <!-- Right Column: Franchise Roll & Draft Pack -->
-      <section id="draft-deck-section">
+      <!-- Main Stage: Booster Pack Opening OR Fanned Out Cards -->
+      <section id="interactive-stage">
         
-        <!-- Active Franchise Roll Card -->
-        <div id="roll-banner" class="franchise-roll-card">
-          <div class="franchise-left">
-            <span id="roll-emoji" class="team-emoji">🏹</span>
-            <div class="franchise-title-wrap">
-              <div class="franchise-badge-row">
-                <span id="roll-season" class="season-badge">2020</span>
-                <span id="roll-team-code" class="team-code-badge">KC</span>
+        <!-- STAGE 1: 3D FOIL BOOSTER PACK VIEW -->
+        <div id="pack-stage-view" class="stage-view">
+          
+          <div class="booster-pack-wrapper">
+            <div class="booster-pack" id="booster-pack">
+              <!-- Top Foil Crimp & Tear Strip -->
+              <div class="pack-crimp top-crimp"></div>
+              <div class="pack-tear-strip" id="pack-tear-strip">
+                <span class="tear-notch">✂️</span>
+                <span class="tear-label">PULL TO OPEN</span>
               </div>
-              <h2 id="roll-team-name" class="franchise-name">Kansas City Chiefs</h2>
+
+              <!-- Pack Foil Body with Metallic Sheen -->
+              <div class="pack-body" id="pack-body">
+                <div class="pack-sheen"></div>
+                <div class="pack-edition-tag">OFFICIAL NFL DRAFT PACK</div>
+                
+                <div class="pack-team-logo" id="pack-emoji">🏹</div>
+                
+                <div class="pack-team-info">
+                  <div class="pack-season-badge" id="pack-season">2020</div>
+                  <h2 class="pack-team-title" id="pack-team-name">Kansas City Chiefs</h2>
+                </div>
+
+                <div class="pack-rip-prompt">
+                  <span class="rip-lightning">⚡</span>
+                  <span class="rip-text">CLICK TO RIP OPEN PACK</span>
+                  <span class="rip-lightning">⚡</span>
+                </div>
+              </div>
+
+              <!-- Bottom Foil Crimp -->
+              <div class="pack-crimp bottom-crimp"></div>
+            </div>
+
+            <!-- Reroll Controls on Pack -->
+            <div class="pack-reroll-bar">
+              <button id="reroll-team-btn" class="pack-reroll-btn" title="Reroll Franchise for this Year">
+                <span class="reroll-icon">🎲</span>
+                <span>Reroll Team (<span id="team-rerolls-left">1</span>)</span>
+              </button>
+              <button id="reroll-season-btn" class="pack-reroll-btn" title="Reroll Year for this Franchise">
+                <span class="reroll-icon">📅</span>
+                <span>Reroll Year (<span id="season-rerolls-left">1</span>)</span>
+              </button>
             </div>
           </div>
 
-          <div class="franchise-reroll-actions">
-            <button id="reroll-team-btn" class="reroll-btn" title="Reroll Franchise for this Year">
-              <span class="reroll-icon">🎲</span>
-              <span class="reroll-label">Team (<span id="team-rerolls-left">1</span>)</span>
-            </button>
-            <button id="reroll-season-btn" class="reroll-btn" title="Reroll Year for this Franchise">
-              <span class="reroll-icon">📅</span>
-              <span class="reroll-label">Year (<span id="season-rerolls-left">1</span>)</span>
-            </button>
-          </div>
         </div>
 
-        <!-- Filter & Search Bar -->
-        <div id="filter-controls">
-          <div class="filter-tabs-group">
-            <button class="filter-tab active" data-pos="ALL">ALL</button>
-            <button class="filter-tab" data-pos="QB">QB</button>
-            <button class="filter-tab" data-pos="RB">RB</button>
-            <button class="filter-tab" data-pos="WR">WR</button>
-            <button class="filter-tab" data-pos="TE">TE</button>
-          </div>
-          <div class="search-input-wrap">
-            <span class="search-icon">🔍</span>
-            <input type="text" id="search-input" placeholder="Search player..." autocomplete="off">
-            <button id="clear-search" class="clear-btn" style="display: none;">✕</button>
-          </div>
-        </div>
+        <!-- STAGE 2: FANNED OUT CARDS ON TABLE VIEW -->
+        <div id="fanned-stage-view" class="stage-view" style="display: none;">
+          
+          <!-- Stage Controls & Filters -->
+          <div class="fanned-controls-bar">
+            <div class="fanned-team-badge">
+              <span id="fanned-emoji" class="team-emoji">🏹</span>
+              <span id="fanned-season" class="season-badge">2020</span>
+              <span id="fanned-team-name" class="franchise-name">Kansas City Chiefs</span>
+            </div>
 
-        <!-- Available Weapons Cards Pack -->
-        <div id="draft-pack-container">
-          <div class="pack-header">
-            <span class="pack-title">AVAILABLE WEAPONS</span>
-            <span id="eligible-positions-hint" class="eligible-hint">Eligible: QB, RB, WR, TE</span>
+            <!-- Position Filter Tabs -->
+            <div class="filter-tabs-group">
+              <button class="filter-tab active" data-pos="ALL">ALL</button>
+              <button class="filter-tab" data-pos="QB">QB</button>
+              <button class="filter-tab" data-pos="RB">RB</button>
+              <button class="filter-tab" data-pos="WR">WR</button>
+              <button class="filter-tab" data-pos="TE">TE</button>
+            </div>
+
+            <!-- Search Input -->
+            <div class="search-input-wrap">
+              <span class="search-icon">🔍</span>
+              <input type="text" id="search-input" placeholder="Search player..." autocomplete="off">
+              <button id="clear-search" class="clear-btn" style="display: none;">✕</button>
+            </div>
           </div>
-          <div id="player-card-pack" class="cards-pack-grid">
-            <!-- Dynamic Player Cards rendered here -->
+
+          <!-- Cards Fan Grid -->
+          <div class="fanned-cards-scroll-area">
+            <div id="player-card-pack" class="cards-fan-grid">
+              <!-- Dynamically Fanned Cards Rendered Here -->
+            </div>
           </div>
+
         </div>
 
       </section>
