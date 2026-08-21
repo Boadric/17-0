@@ -221,39 +221,33 @@ html, body {
    Middle 65-70%: Interactive Draft Table Arena
    ========================================================= */
 
-/* Interactive Stage & Stage Views */
+/* Ensure the flex chain preserves explicit pixel height */
 #interactive-stage {
   flex: 1 1 auto;
   width: 100%;
-  min-height: 280px;
+  height: 100%;
+  min-height: 0;
   background: radial-gradient(circle at 50% 50%, rgba(17, 26, 46, 0.75) 0%, rgba(6, 10, 18, 0.92) 100%);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 16px;
   position: relative;
-  display: flex;
-  flex-direction: column;
+  display: flex !important;
+  flex-direction: column !important;
   overflow: hidden;
   box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.8), 0 8px 24px rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(12px);
 }
 
-.stage-view {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow: hidden;
-}
-
+#pack-stage-view,
 #fanned-stage-view {
   width: 100%;
   height: 100%;
+  flex: 1 1 0%;
+  min-height: 0;
   display: flex;
   flex-direction: column;
-  flex: 1 1 auto;
-  min-height: 0;
+  overflow: hidden;
+  position: relative;
 }
 
 /* =========================================================
@@ -535,36 +529,36 @@ html, body {
   cursor: pointer;
 }
 
-/* Horizontal Pack Fan Container (Strict Row) */
-#player-card-pack,
-.cards-fan-arc-container {
+/* Horizontal Pack Fan Stage */
+#player-card-pack {
   display: flex !important;
   flex-direction: row !important;
   flex-wrap: nowrap !important;
   justify-content: center !important;
   align-items: center !important;
-  gap: 1.25rem !important;
-  flex: 1 1 auto !important;
+  gap: 16px !important;
+  flex: 1 1 0% !important;
   min-height: 0 !important;
   width: 100% !important;
   height: 100% !important;
-  padding: 10px 20px !important;
+  padding: 12px 24px !important;
   overflow-x: auto !important;
   overflow-y: hidden !important;
   box-sizing: border-box !important;
 }
 
-/* Draft Trading Cards (Strict 5:7 Ratio & Fixed Size) */
+/* 3D Trading Card Unit Dimensions (Fixed Portrait Standard) */
 .draft-card {
-  width: 190px !important;
-  min-width: 190px !important;
-  max-width: 190px !important;
-  height: 266px !important;
-  min-height: 266px !important;
-  max-height: 266px !important;
-  flex: 0 0 190px !important;
+  width: 175px !important;
+  min-width: 175px !important;
+  max-width: 175px !important;
+  height: 245px !important;
+  min-height: 245px !important;
+  max-height: 245px !important;
+  flex: 0 0 175px !important;
   box-sizing: border-box !important;
   position: relative !important;
+  display: block !important;
   border-radius: 12px;
   cursor: pointer;
   transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
@@ -642,10 +636,13 @@ html, body {
 }
 
 .card-top-bar {
+  height: 24px !important;
+  min-height: 24px !important;
+  flex-shrink: 0 !important;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 2px 5px;
+  padding: 2px 6px;
   background: rgba(0, 0, 0, 0.6);
   z-index: 2;
 }
@@ -681,29 +678,37 @@ html, body {
 .team-tag { font-size: 0.58rem; font-weight: 700; color: #94a3b8; }
 
 .card-portrait-wrap {
-  flex: 1 1 auto !important;
+  flex: 1 1 0% !important;
   min-height: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
   position: relative;
   overflow: hidden;
+  background: radial-gradient(circle at 50% 30%, rgba(255, 255, 255, 0.12), rgba(0, 0, 0, 0.8));
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .portrait-img {
-  width: 100%;
-  height: 100%;
+  width: 100% !important;
+  height: 100% !important;
   object-fit: contain !important;
+  object-position: center bottom !important;
 }
 
 .portrait-fallback { font-size: 2rem; display: flex; align-items: center; justify-content: center; }
 
 .card-bottom-plate {
-  padding: 3px 5px 4px;
+  height: 52px !important;
+  min-height: 52px !important;
+  flex-shrink: 0 !important;
+  padding: 3px 6px 4px;
   background: rgba(8, 14, 26, 0.95);
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   display: flex;
   flex-direction: column;
+  justify-content: center;
   gap: 1px;
   z-index: 2;
 }
@@ -774,12 +779,19 @@ html, body {
    Bottom 25-30%: Integrated 7-Slot Roster Formation Bar
    ========================================================= */
 
-/* Bottom 7-Man Roster Slots */
+/* Roster Bar & 7-Man Slots */
 #roster-bar-section {
-  height: 155px !important;
-  min-height: 155px !important;
-  max-height: 155px !important;
-  flex-shrink: 0 !important;
+  height: 160px !important;
+  min-height: 160px !important;
+  max-height: 160px !important;
+  flex: 0 0 160px !important;
+  width: 100%;
+  background: linear-gradient(180deg, rgba(14, 23, 42, 0.92) 0%, rgba(9, 14, 26, 0.92) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  padding: 6px 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(12px);
   display: flex !important;
   flex-direction: column !important;
   justify-content: space-between !important;
@@ -790,19 +802,20 @@ html, body {
   flex-direction: row !important;
   justify-content: center !important;
   align-items: center !important;
-  gap: 10px !important;
+  gap: 12px !important;
   width: 100% !important;
-  flex: 1 1 auto !important;
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
 }
 
 .table-card-slot {
-  width: 75px !important;
-  min-width: 75px !important;
-  max-width: 75px !important;
-  height: 105px !important;
-  min-height: 105px !important;
-  max-height: 105px !important;
-  flex: 0 0 75px !important;
+  width: 80px !important;
+  min-width: 80px !important;
+  max-width: 80px !important;
+  height: 112px !important;
+  min-height: 112px !important;
+  max-height: 112px !important;
+  flex: 0 0 80px !important;
   border-radius: 8px;
   position: relative;
   overflow: hidden;
@@ -816,12 +829,41 @@ html, body {
   border-radius: 8px !important;
 }
 
+.table-card-slot .card-top-bar {
+  height: 18px !important;
+  min-height: 18px !important;
+  padding: 1px 3px !important;
+}
+
+.table-card-slot .pos-shield {
+  font-size: 0.5rem !important;
+}
+
+.table-card-slot .team-tag {
+  font-size: 0.48rem !important;
+}
+
+.table-card-slot .card-bottom-plate {
+  height: 32px !important;
+  min-height: 32px !important;
+  padding: 1px 3px 2px !important;
+}
+
 .table-card-slot .player-name {
-  font-size: 0.58rem !important;
+  font-size: 0.55rem !important;
+}
+
+.table-card-slot .player-subline {
+  display: none !important;
+}
+
+.table-card-slot .rating-strip {
+  margin-top: 0 !important;
+  padding: 0 2px !important;
 }
 
 .table-card-slot .rating-value {
-  font-size: 0.65rem !important;
+  font-size: 0.62rem !important;
 }
 
 .slot-placeholder {
