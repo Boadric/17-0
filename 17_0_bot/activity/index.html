@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>17-0 NFL Strategy Game</title>
+  <!-- Discord Embedded App SDK (Optional when loaded inside Discord) -->
+  <script src="https://cdn.jsdelivr.net/npm/@discord/embedded-app-sdk@1.1.0/output/index.js"></script>
+  <!-- Canvas Confetti for 17-0 Victory celebration -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div id="app-container">
+    <!-- Top Navigation Bar -->
+    <header class="app-header">
+      <div class="header-left">
+        <div class="logo-badge">
+          <span class="logo-icon">🏈</span>
+          <span class="logo-text">17-0</span>
+        </div>
+        <div class="round-pill" id="round-tracker">Round <span id="current-round">1</span>/7</div>
+      </div>
+      <div class="header-right">
+        <button id="sound-btn" class="icon-btn" title="Toggle Sound">🔊</button>
+        <button id="rules-btn" class="icon-btn" title="Rules & Chemistry">❓</button>
+        <button id="leaderboard-btn" class="icon-btn" title="Hall of Fame">🏆</button>
+        <button id="restart-btn" class="icon-btn" title="New Game">🔄</button>
+      </div>
+    </header>
+
+    <!-- Position Filter Tabs -->
+    <div class="filter-tabs-container">
+      <button class="filter-tab active" data-pos="ALL">All</button>
+      <button class="filter-tab" data-pos="QB">QB</button>
+      <button class="filter-tab" data-pos="RB">RB</button>
+      <button class="filter-tab" data-pos="WR">WR</button>
+      <button class="filter-tab" data-pos="TE">TE</button>
+    </div>
+
+    <!-- Active Franchise & Year Roll Card -->
+    <div class="roll-banner" id="roll-banner">
+      <div class="roll-info">
+        <div class="team-tag" id="team-tag">
+          <span id="roll-emoji">🏈</span>
+          <span id="roll-team-code">KC</span> · <span id="roll-season">2020</span>
+        </div>
+        <div class="team-name" id="roll-team-name">Kansas City Chiefs</div>
+      </div>
+      <div class="reroll-actions">
+        <button id="reroll-team-btn" class="reroll-btn">
+          <span class="reroll-icon">↺</span> Team <span class="badge" id="team-rerolls-left">1</span>
+        </button>
+        <button id="reroll-season-btn" class="reroll-btn">
+          <span class="reroll-icon">↺</span> Year <span class="badge" id="season-rerolls-left">1</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Live Search Input -->
+    <div class="search-container">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="search-input" placeholder="Search available players by name..." autocomplete="off">
+      <button id="clear-search" class="clear-btn" style="display: none;">✕</button>
+    </div>
+
+    <!-- Available Players List -->
+    <main class="players-section">
+      <div class="section-header">
+        <span class="section-title">Available Weapons</span>
+        <span class="eligible-hint" id="eligible-positions-hint">Eligible: QB, RB, WR, TE</span>
+      </div>
+      <div class="player-list" id="player-list">
+        <!-- Dynamic Player Cards rendered via JavaScript -->
+      </div>
+    </main>
+
+    <!-- Bottom Sticky Roster Drawer / Projection HUD -->
+    <footer class="roster-drawer" id="roster-drawer">
+      <div class="drawer-header" id="drawer-toggle">
+        <div class="drawer-left">
+          <span class="roster-count-badge" id="roster-count-badge">Current Roster <span id="roster-count">0</span>/7</span>
+          <span class="drawer-arrow" id="drawer-arrow">▲</span>
+        </div>
+        <div class="projection-badge" id="hud-projection">
+          <span id="hud-tier-badge">🎟️</span>
+          <span id="hud-record">0-0</span>
+          <span class="hud-score" id="hud-total-score">0.0 FPPG</span>
+        </div>
+      </div>
+
+      <!-- Expanded 7-Slot Roster Grid -->
+      <div class="roster-content" id="roster-content">
+        <div class="roster-grid" id="roster-grid">
+          <!-- 7 Roster Slots rendered via JavaScript -->
+        </div>
+
+        <!-- Chemistry Links Feed -->
+        <div class="chemistry-feed" id="chemistry-feed">
+          <!-- Active chemistry connections rendered here -->
+        </div>
+
+        <!-- Score Breakdown Stats Bar -->
+        <div class="stats-bar">
+          <div class="stat-item">
+            <span class="stat-label">Base FPPG</span>
+            <span class="stat-val" id="stat-base-fppg">0.0</span>
+          </div>
+          <div class="stat-item highlight">
+            <span class="stat-label">⚡ Chemistry</span>
+            <span class="stat-val" id="stat-chem-fppg">+0.0</span>
+          </div>
+          <div class="stat-item total">
+            <span class="stat-label">Total Score</span>
+            <span class="stat-val" id="stat-total-fppg">0.0</span>
+          </div>
+          <div class="stat-item tier">
+            <span class="stat-label">Projected Regular Season</span>
+            <span class="stat-val" id="stat-record-tier">Draft Lottery</span>
+          </div>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Game Over Modal -->
+  <div class="modal-overlay" id="game-over-modal" style="display: none;">
+    <div class="modal-card victory-card">
+      <div class="modal-header">
+        <div class="trophy-badge" id="modal-trophy">🏆</div>
+        <h2 id="modal-title">Regular Season Complete!</h2>
+        <div class="final-record-banner" id="modal-record-banner">
+          <span id="modal-badge">🏆</span>
+          <span id="modal-record">17-0</span>
+          <span class="tier-tag" id="modal-tier-tag">Undefeated Champion</span>
+        </div>
+      </div>
+
+      <div class="modal-body">
+        <div class="score-summary-box">
+          <div class="box-stat">
+            <span class="lbl">Base Points</span>
+            <span class="val" id="modal-base">0.0</span>
+          </div>
+          <div class="box-stat">
+            <span class="lbl">⚡ Chemistry</span>
+            <span class="val chem" id="modal-chem">+0.0</span>
+          </div>
+          <div class="box-stat primary">
+            <span class="lbl">Final Total</span>
+            <span class="val" id="modal-total">0.0 FPPG</span>
+          </div>
+        </div>
+
+        <h3>🏆 Final 7-Man Fantasy Roster</h3>
+        <div class="modal-roster-list" id="modal-roster-list"></div>
+
+        <h3>⚡ Active Chemistry Connections</h3>
+        <div class="modal-links-list" id="modal-links-list"></div>
+      </div>
+
+      <div class="modal-footer">
+        <button id="save-leaderboard-btn" class="primary-action-btn">💾 Save to Hall of Fame</button>
+        <button id="play-again-btn" class="secondary-action-btn">🔄 Play Again</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Leaderboard Modal -->
+  <div class="modal-overlay" id="leaderboard-modal" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>🏆 17-0 Hall of Fame</h2>
+        <button class="close-modal-btn" id="close-leaderboard">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="leaderboard-list" id="leaderboard-list">
+          <div class="loading-spinner">Loading Hall of Fame...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rules & Chemistry Guide Modal -->
+  <div class="modal-overlay" id="rules-modal" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>📖 17-0 Game Rules & Chemistry</h2>
+        <button class="close-modal-btn" id="close-rules">✕</button>
+      </div>
+      <div class="modal-body rules-content">
+        <h3>🎯 Objective</h3>
+        <p>Draft 7 offensive skill players across 7 rounds from random historical NFL teams and seasons (1999–2024). Stack chemistry links to hit <strong>160.0+ FPPG</strong> and achieve an undefeated <strong>17-0 record</strong>!</p>
+
+        <h3>📋 Roster Positions (7 Total)</h3>
+        <ul>
+          <li><strong>QB</strong>: Quarterback</li>
+          <li><strong>RB1, RB2</strong>: Running Backs</li>
+          <li><strong>WR1, WR2</strong>: Wide Receivers</li>
+          <li><strong>TE</strong>: Tight End</li>
+          <li><strong>FLX</strong>: Flex weapon (any RB, WR, or TE)</li>
+        </ul>
+
+        <h3>⚡ Chemistry Link Bonuses (Stackable)</h3>
+        <ul>
+          <li><strong>👑 Legendary Connection</strong>: <code>+2.0</code> each (<code>+4.0</code> team) for all-time iconic duos (e.g. Brady & Gronk, Mahomes & Kelce, Manning & Harrison).</li>
+          <li><strong>🌟 Elite Connection</strong>: <code>+1.0</code> each (<code>+2.0</code> team) for standout historical tandems (e.g. Burrow & Chase).</li>
+          <li><strong>🎓 Same College</strong>: <code>+2.0</code> each (<code>+4.0</code> team) if attended the same university.</li>
+          <li><strong>⚡ Same Team & Season</strong>: <code>+2.0</code> each (<code>+4.0</code> team) if drafted from the exact same franchise & year.</li>
+          <li><strong>🤝 Past Teammates</strong>: <code>+1.0</code> each (<code>+2.0</code> team) if ever rostered on the same team in any career season.</li>
+          <li><strong>📅 Same Draft Class</strong>: <code>+1.0</code> each (<code>+2.0</code> team) if drafted in the same NFL Draft year.</li>
+        </ul>
+
+        <h3>🏆 Season Record Tiers</h3>
+        <ul>
+          <li><strong>160.0+ FPPG</strong>: 🏆 <strong>17-0</strong> (Undefeated Champion)</li>
+          <li><strong>145.0 – 159.9 FPPG</strong>: 💍 <strong>15-2 to 16-1</strong> (Super Bowl Contender)</li>
+          <li><strong>130.0 – 144.9 FPPG</strong>: 🔒 <strong>12-5 to 14-3</strong> (Playoff Lock)</li>
+          <li><strong>115.0 – 129.9 FPPG</strong>: 🫧 <strong>9-8 to 11-6</strong> (Wild Card Bubble)</li>
+          <li><strong>&lt; 115.0 FPPG</strong>: 🎟️ <strong>&le; 8-9</strong> (Draft Lottery Bound)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/audio.js"></script>
+  <script src="/static/app.js"></script>
+</body>
+</html>
