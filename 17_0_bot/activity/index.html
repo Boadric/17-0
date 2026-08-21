@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>17-0: NFL Draft & Chemistry Strategy Game</title>
+  <title>17-0: NFL Ultimate Team Draft & Chemistry Strategy Game</title>
   
   <!-- Fonts & Icons -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -17,176 +17,19 @@
 
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="/static/style.css">
-
-  <style>
-    /* =========================================================
-       Direct Inlined CSS to Guarantee 100% Instant Rendering
-       ========================================================= */
-    :root {
-      --bg-dark: #070a13;
-      --bg-panel: #0d1424;
-      --bg-card: #111a2e;
-      --border-color: #1e293b;
-      --border-bright: #334155;
-      --accent-blue: #0ea5e9;
-      --accent-gold: #f59e0b;
-      --accent-green: #10b981;
-      --pos-qb: #9333ea;
-      --pos-rb: #16a34a;
-      --pos-wr: #0284c7;
-      --pos-te: #ea580c;
-      --pos-flx: #d97706;
-      --text-primary: #f8fafc;
-      --text-secondary: #94a3b8;
-      --text-muted: #64748b;
-    }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
-    html, body { width: 100vw !important; height: 100vh !important; margin: 0 !important; padding: 0 !important; overflow: hidden !important; background-color: var(--bg-dark); color: var(--text-primary); font-family: 'Inter', system-ui, sans-serif; }
-    #app-container { width: 100vw; height: 100vh; display: flex; flex-direction: column; background: radial-gradient(circle at 50% 10%, #111e38 0%, #070a13 70%); position: absolute; inset: 0; overflow: hidden; }
-
-    #game-header { height: 52px; min-height: 52px; background: rgba(10, 16, 30, 0.95); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; padding: 0 14px; z-index: 100; }
-    .header-left { display: flex; align-items: center; gap: 10px; }
-    .logo-badge { display: flex; align-items: baseline; gap: 4px; }
-    .logo-title { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.3rem; background: linear-gradient(135deg, #f59e0b, #fbbf24, #fff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: -0.5px; }
-    .logo-sub { font-size: 0.65rem; font-weight: 800; color: var(--accent-blue); letter-spacing: 1.5px; }
-    .round-tracker { background: #162238; padding: 2px 8px; border-radius: 6px; display: flex; align-items: baseline; gap: 3px; border: 1px solid var(--border-bright); }
-    .round-label { font-size: 0.6rem; font-weight: 700; color: var(--text-muted); }
-    .round-val { font-family: 'Orbitron', sans-serif; font-size: 1rem; font-weight: 800; color: var(--accent-blue); }
-    .round-total { font-size: 0.7rem; color: var(--text-muted); }
-
-    .record-projection-badge { background: linear-gradient(135deg, #132242, #0c162b); border: 1px solid var(--accent-blue); box-shadow: 0 0 16px rgba(14, 165, 233, 0.25); border-radius: 20px; padding: 4px 14px; display: flex; align-items: center; gap: 8px; }
-    .tier-icon { font-size: 1.15rem; }
-    .record-text-group { display: flex; align-items: baseline; gap: 6px; }
-    .record-val { font-family: 'Orbitron', sans-serif; font-size: 1.1rem; font-weight: 900; color: #fff; }
-    .score-fppg { font-size: 0.8rem; font-weight: 800; color: var(--accent-gold); }
-    .header-right { display: flex; align-items: center; gap: 5px; }
-
-    .icon-btn { background: #162238; border: 1px solid var(--border-bright); color: var(--text-primary); width: 32px; height: 32px; border-radius: 8px; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s ease; }
-    .icon-btn:hover { background: #233454; border-color: var(--accent-blue); transform: translateY(-1px); }
-
-    #board-container { flex: 1; display: flex; flex-direction: column; padding: 10px 14px; gap: 10px; overflow: hidden; height: calc(100vh - 52px); }
-
-    /* Roster Bar */
-    #roster-bar-section { background: radial-gradient(circle at 50% 30%, #0d1a33 0%, #070d1a 100%); border: 1px solid var(--border-color); border-radius: 12px; padding: 8px 12px; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4); flex-shrink: 0; }
-    .roster-bar-header { display: flex; align-items: center; justify-content: space-between; padding-bottom: 4px; margin-bottom: 6px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
-    .section-title { display: flex; align-items: center; gap: 6px; font-family: 'Teko', sans-serif; font-size: 1.15rem; letter-spacing: 1px; color: #cbd5e1; }
-    .chem-counter { background: rgba(245, 158, 11, 0.15); border: 1px solid var(--accent-gold); border-radius: 12px; padding: 2px 8px; font-size: 0.72rem; font-weight: 700; color: #fbbf24; display: flex; align-items: center; gap: 4px; }
-
-    #table-cards-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
-    .table-card-slot { height: 110px; border-radius: 8px; position: relative; }
-    .slot-placeholder { width: 100%; height: 100%; border: 2px dashed #22324f; border-radius: 8px; background: rgba(14, 23, 43, 0.5); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; }
-    .slot-pos-badge { font-family: 'Orbitron', sans-serif; font-size: 0.65rem; font-weight: 900; padding: 1px 5px; border-radius: 3px; color: #fff; }
-    .slot-pos-badge.qb { background: var(--pos-qb); }
-    .slot-pos-badge.rb { background: var(--pos-rb); }
-    .slot-pos-badge.wr { background: var(--pos-wr); }
-    .slot-pos-badge.te { background: var(--pos-te); }
-    .slot-pos-badge.flx { background: var(--pos-flx); color: #000; }
-    .slot-hint { font-size: 0.55rem; color: #64748b; font-weight: 600; }
-
-    .trading-card { width: 100%; height: 100%; background: linear-gradient(145deg, #131d33, #090e1a); border-radius: 8px; border: 2px solid var(--border-bright); display: flex; flex-direction: column; overflow: hidden; position: relative; animation: cardSnapIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1); }
-    .trading-card.chemistry-active { border-color: var(--accent-gold) !important; box-shadow: 0 0 16px rgba(245, 158, 11, 0.6); }
-    @keyframes cardSnapIn { 0% { transform: scale(1.4) translateY(-30px); opacity: 0; } 100% { transform: scale(1) translateY(0); opacity: 1; } }
-    .card-header-bar { display: flex; align-items: center; justify-content: space-between; padding: 1px 4px; background: rgba(0, 0, 0, 0.6); }
-    .card-team-tag { font-size: 0.55rem; font-weight: 700; color: #cbd5e1; }
-    .card-photo-wrap { flex: 1; position: relative; overflow: hidden; background: radial-gradient(circle at 50% 30%, rgba(255, 255, 255, 0.12), rgba(0, 0, 0, 0.7)); display: flex; align-items: center; justify-content: center; }
-    .card-headshot-img { width: 100%; height: 100%; object-fit: cover; object-position: top center; }
-    .card-fallback-avatar { font-size: 1.5rem; }
-    .card-info-wrap { padding: 2px 4px 3px; background: rgba(10, 16, 28, 0.95); display: flex; flex-direction: column; gap: 1px; }
-    .card-player-name { font-size: 0.65rem; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #f8fafc; }
-    .card-fppg-badge { display: flex; align-items: baseline; justify-content: space-between; background: rgba(245, 158, 11, 0.15); border-radius: 3px; padding: 1px 4px; }
-    .card-fppg-val { font-family: 'Orbitron', sans-serif; font-size: 0.7rem; font-weight: 900; color: #fbbf24; }
-    .card-fppg-lbl { font-size: 0.5rem; font-weight: 700; color: var(--accent-gold); }
-    .chem-feed-container { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
-    .chem-link-pill { background: linear-gradient(135deg, rgba(245, 158, 11, 0.18), rgba(14, 165, 233, 0.18)); border: 1px solid var(--accent-gold); border-radius: 20px; padding: 2px 8px; font-size: 0.65rem; color: #f8fafc; display: flex; align-items: center; gap: 4px; }
-
-    /* Interactive Stage */
-    #interactive-stage { flex: 1; background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 14px; position: relative; display: flex; flex-direction: column; overflow: hidden; box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.6); }
-    .stage-view { width: 100%; height: 100%; display: flex; flex-direction: column; }
-
-    /* 3D Booster Pack */
-    .booster-pack-wrapper { margin: auto; display: flex; flex-direction: column; align-items: center; gap: 14px; perspective: 1000px; animation: packDropIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
-    @keyframes packDropIn { 0% { opacity: 0; transform: translateY(-80px) scale(0.7) rotate(-5deg); } 100% { opacity: 1; transform: translateY(0) scale(1) rotate(0deg); } }
-
-    .booster-pack { width: 260px; height: 350px; background: linear-gradient(145deg, #1e293b, #0f172a); border-radius: 14px; border: 3px solid #fbbf24; box-shadow: 0 16px 36px rgba(0, 0, 0, 0.8), 0 0 30px rgba(245, 158, 11, 0.35); display: flex; flex-direction: column; position: relative; overflow: hidden; cursor: pointer; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
-    .booster-pack:hover { transform: translateY(-6px) scale(1.03) rotate(1deg); box-shadow: 0 24px 48px rgba(0, 0, 0, 0.9), 0 0 45px rgba(245, 158, 11, 0.6); }
-    .pack-crimp { height: 16px; background: repeating-linear-gradient(90deg, #334155, #334155 4px, #1e293b 4px, #1e293b 8px); border-bottom: 1px solid rgba(255, 255, 255, 0.2); }
-    .bottom-crimp { border-bottom: none; border-top: 1px solid rgba(255, 255, 255, 0.2); }
-    .pack-tear-strip { background: linear-gradient(90deg, #d97706, #fbbf24, #d97706); padding: 3px 10px; display: flex; align-items: center; justify-content: space-between; font-size: 0.7rem; font-weight: 900; color: #000; letter-spacing: 1px; }
-    .pack-body { flex: 1; padding: 14px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; text-align: center; position: relative; background: radial-gradient(circle at 50% 40%, rgba(245, 158, 11, 0.25), transparent 70%); }
-    .pack-sheen { position: absolute; inset: 0; background: linear-gradient(115deg, transparent 35%, rgba(255, 255, 255, 0.35) 50%, transparent 65%); pointer-events: none; animation: foilShine 3s infinite linear; }
-    @keyframes foilShine { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
-    .pack-edition-tag { font-family: 'Orbitron', sans-serif; font-size: 0.62rem; font-weight: 900; color: #94a3b8; letter-spacing: 1.5px; }
-    .pack-team-logo { font-size: 4rem; filter: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.8)); animation: logoFloat 2.5s infinite ease-in-out; }
-    @keyframes logoFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
-    .pack-season-badge { font-family: 'Orbitron', sans-serif; font-size: 1.3rem; font-weight: 900; color: #fbbf24; }
-    .pack-team-title { font-size: 1.2rem; font-weight: 900; color: #fff; line-height: 1.1; }
-    .pack-rip-prompt { background: linear-gradient(90deg, #0284c7, #0ea5e9, #0284c7); color: #fff; padding: 6px 14px; border-radius: 20px; font-size: 0.72rem; font-weight: 900; display: flex; align-items: center; gap: 6px; box-shadow: 0 0 16px rgba(14, 165, 233, 0.6); animation: ripPromptPulse 1.5s infinite ease-in-out; }
-    @keyframes ripPromptPulse { 0%, 100% { transform: scale(1); box-shadow: 0 0 12px rgba(14, 165, 233, 0.5); } 50% { transform: scale(1.06); box-shadow: 0 0 24px rgba(14, 165, 233, 0.9); } }
-    .pack-reroll-bar { display: flex; gap: 8px; }
-    .pack-reroll-btn { background: #162238; border: 1px solid var(--border-bright); border-radius: 8px; padding: 6px 12px; color: #fff; font-size: 0.75rem; font-weight: 700; display: flex; align-items: center; gap: 5px; cursor: pointer; transition: all 0.2s ease; }
-    .pack-reroll-btn:hover:not(:disabled) { background: #233454; border-color: var(--accent-blue); transform: translateY(-2px); }
-    .pack-reroll-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-    .booster-pack.tearing { animation: packBurst 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
-    @keyframes packBurst { 0% { transform: scale(1); filter: brightness(1); } 40% { transform: scale(1.15) rotate(3deg); filter: brightness(1.8); } 100% { transform: scale(1.4) rotate(-10deg); opacity: 0; filter: brightness(2.5); } }
-
-    /* Fanned Cards View */
-    .fanned-controls-bar { padding: 8px 12px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; gap: 8px; background: rgba(10, 16, 28, 0.95); }
-    .fanned-team-badge { display: flex; align-items: center; gap: 6px; }
-    .team-emoji { font-size: 1.4rem; }
-    .season-badge { font-family: 'Orbitron', sans-serif; font-size: 0.95rem; font-weight: 900; color: var(--accent-gold); }
-    .franchise-name { font-size: 0.95rem; font-weight: 800; }
-    .filter-tabs-group { display: flex; gap: 3px; }
-    .filter-tab { background: #162238; border: 1px solid var(--border-bright); color: var(--text-secondary); padding: 4px 10px; border-radius: 5px; font-size: 0.72rem; font-weight: 700; cursor: pointer; }
-    .filter-tab.active { background: var(--accent-blue); border-color: #38bdf8; color: #fff; }
-    .filter-tab:disabled { opacity: 0.3; cursor: not-allowed; }
-    .search-input-wrap { position: relative; width: 150px; }
-    .search-icon { position: absolute; left: 8px; top: 50%; transform: translateY(-50%); font-size: 0.75rem; color: var(--text-muted); }
-    #search-input { width: 100%; background: #090f1d; border: 1px solid var(--border-bright); border-radius: 6px; padding: 4px 20px 4px 24px; color: #fff; font-size: 0.75rem; outline: none; }
-    .clear-btn { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-muted); font-size: 0.75rem; cursor: pointer; }
-    .fanned-cards-scroll-area { flex: 1; padding: 12px; overflow-y: auto; }
-    .cards-fan-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
-    .draft-card { height: 180px; background: linear-gradient(145deg, #131e36, #0c1424); border: 2px solid var(--border-bright); border-radius: 10px; display: flex; flex-direction: column; overflow: hidden; cursor: pointer; position: relative; box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5); animation: cardDealFanIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
-    @keyframes cardDealFanIn { 0% { opacity: 0; transform: translateY(40px) scale(0.7) rotate(6deg); } 100% { opacity: 1; transform: translateY(0) scale(1) rotate(0deg); } }
-    .draft-card:hover { transform: translateY(-8px) scale(1.05); border-color: var(--accent-blue); box-shadow: 0 12px 28px rgba(14, 165, 233, 0.4); z-index: 10; }
-    .draft-card.drafted { opacity: 0.3; cursor: not-allowed; filter: grayscale(80%); }
-    .cards-fan-grid.shuffling-away .draft-card:not(.chosen) { animation: cardShuffleAway 0.35s ease forwards; }
-    @keyframes cardShuffleAway { 0% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(120px) scale(0.6) rotate(-15deg); } }
-
-    /* Modals */
-    .modal-backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 16px; }
-    .modal-card { background: #0f172a; border: 1px solid var(--border-bright); border-radius: 14px; width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto; padding: 18px; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8); }
-    .victory-card { border-color: var(--accent-gold); text-align: center; }
-    .victory-badge { font-size: 3rem; }
-    .victory-record { font-family: 'Orbitron', sans-serif; font-size: 2.5rem; font-weight: 900; color: var(--accent-gold); }
-    .victory-tier { font-size: 0.95rem; font-weight: 800; color: var(--accent-blue); }
-    .victory-stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 8px 0; }
-    .stat-box { background: #1e293b; border-radius: 8px; padding: 8px 4px; display: flex; flex-direction: column; gap: 3px; }
-    .stat-box.highlight { background: linear-gradient(135deg, #1e3a8a, #0f172a); border: 1px solid var(--accent-blue); }
-    .stat-label { font-size: 0.6rem; font-weight: 700; color: var(--text-muted); }
-    .stat-val { font-family: 'Orbitron', sans-serif; font-size: 1rem; font-weight: 900; }
-    .stat-val.bonus { color: var(--accent-blue); }
-    .stat-val.total { color: var(--accent-gold); }
-    .modal-actions { display: flex; gap: 8px; }
-    .action-btn { flex: 1; padding: 10px; border-radius: 8px; font-size: 0.85rem; font-weight: 800; border: none; cursor: pointer; }
-    .save-btn { background: var(--accent-green); color: #fff; }
-    .play-again-btn { background: var(--accent-blue); color: #fff; }
-    .modal-header { display: flex; align-items: center; justify-content: space-between; }
-    .close-modal-btn { background: none; border: none; color: var(--text-muted); font-size: 1.1rem; cursor: pointer; }
-    .lb-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; background: #1e293b; border-radius: 6px; margin-bottom: 4px; font-size: 0.85rem; }
-    .lb-rank { font-weight: 900; margin-right: 6px; }
-    .lb-score { font-family: 'Orbitron', sans-serif; font-weight: 900; color: var(--accent-gold); }
-  </style>
 </head>
 <body>
+  <!-- Ambient Stadium 60 FPS Canvas Backdrop -->
+  <canvas id="stadium-canvas"></canvas>
+
   <div id="app-container">
     
-    <!-- Top Header & Score HUD -->
+    <!-- Top Broadcast HUD -->
     <header id="game-header">
       <div class="header-left">
         <div class="logo-badge">
           <span class="logo-title">17-0</span>
-          <span class="logo-sub">NFL DRAFT</span>
+          <span class="logo-sub">ULTIMATE DRAFT</span>
         </div>
         <div class="round-tracker">
           <span class="round-label">ROUND</span>
@@ -235,37 +78,37 @@
           <div class="table-card-slot" id="slot-WR1" data-slot="WR1">
             <div class="slot-placeholder">
               <span class="slot-pos-badge wr">WR1</span>
-              <span class="slot-hint">Open</span>
+              <span class="slot-hint">Open Slot</span>
             </div>
           </div>
           <div class="table-card-slot" id="slot-QB" data-slot="QB">
             <div class="slot-placeholder">
               <span class="slot-pos-badge qb">QB</span>
-              <span class="slot-hint">Open</span>
+              <span class="slot-hint">Open Slot</span>
             </div>
           </div>
           <div class="table-card-slot" id="slot-WR2" data-slot="WR2">
             <div class="slot-placeholder">
               <span class="slot-pos-badge wr">WR2</span>
-              <span class="slot-hint">Open</span>
+              <span class="slot-hint">Open Slot</span>
             </div>
           </div>
           <div class="table-card-slot" id="slot-TE" data-slot="TE">
             <div class="slot-placeholder">
               <span class="slot-pos-badge te">TE</span>
-              <span class="slot-hint">Open</span>
+              <span class="slot-hint">Open Slot</span>
             </div>
           </div>
           <div class="table-card-slot" id="slot-RB1" data-slot="RB1">
             <div class="slot-placeholder">
               <span class="slot-pos-badge rb">RB1</span>
-              <span class="slot-hint">Open</span>
+              <span class="slot-hint">Open Slot</span>
             </div>
           </div>
           <div class="table-card-slot" id="slot-RB2" data-slot="RB2">
             <div class="slot-placeholder">
               <span class="slot-pos-badge rb">RB2</span>
-              <span class="slot-hint">Open</span>
+              <span class="slot-hint">Open Slot</span>
             </div>
           </div>
           <div class="table-card-slot" id="slot-FLX" data-slot="FLX">
@@ -280,7 +123,7 @@
         <div id="chemistry-feed" class="chem-feed-container"></div>
       </section>
 
-      <!-- Main Stage: Booster Pack Opening OR Fanned Out Cards -->
+      <!-- Main Stage: Booster Pack Opening OR Fanned Out Cards Desk -->
       <section id="interactive-stage">
         
         <!-- STAGE 1: 3D FOIL BOOSTER PACK VIEW -->
@@ -292,7 +135,7 @@
               <div class="pack-crimp top-crimp"></div>
               <div class="pack-tear-strip" id="pack-tear-strip">
                 <span class="tear-notch">✂️</span>
-                <span class="tear-label">PULL TO OPEN</span>
+                <span class="tear-label">PULL TO RIP OPEN</span>
               </div>
 
               <!-- Pack Foil Body with Metallic Sheen -->
@@ -361,7 +204,7 @@
             </div>
           </div>
 
-          <!-- Cards Fan Grid -->
+          <!-- Fanned Cards Desk Grid -->
           <div class="fanned-cards-scroll-area">
             <div id="player-card-pack" class="cards-fan-grid">
               <!-- Dynamically Fanned Cards Rendered Here -->
@@ -375,6 +218,37 @@
     </main>
 
     <!-- Modals -->
+
+    <!-- Card Inspect Modal -->
+    <div id="inspect-card-modal" class="modal-backdrop" style="display: none;">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h2 id="inspect-title">Player Card Inspect</h2>
+          <button id="close-inspect" class="close-modal-btn" onclick="document.getElementById('inspect-card-modal').style.display='none';">✕</button>
+        </div>
+        <div class="inspect-card-content">
+          <div class="inspect-photo-box">
+            <img id="inspect-photo" src="" alt="Player Photo" />
+          </div>
+          <div class="inspect-info-col">
+            <div id="inspect-tier" class="inspect-tier-tag">Legendary Gold</div>
+            <div id="inspect-team-season" style="font-weight: 700; color: #cbd5e1;">2020 KC · QB</div>
+            <div class="inspect-stat-row">
+              <span style="color: #94a3b8;">Rating:</span>
+              <strong id="inspect-fppg" style="color: #fbbf24;">24.5 FPPG</strong>
+            </div>
+            <div class="inspect-stat-row">
+              <span style="color: #94a3b8;">College:</span>
+              <strong id="inspect-college">Texas Tech</strong>
+            </div>
+            <div class="inspect-stat-row">
+              <span style="color: #94a3b8;">Draft:</span>
+              <strong id="inspect-draft">2017 R1 P10</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- Game Over Victory Modal -->
     <div id="game-over-modal" class="modal-backdrop" style="display: none;">
@@ -401,12 +275,12 @@
         </div>
 
         <div class="modal-roster-summary">
-          <h3>Your 7-Man Fantasy Roster</h3>
+          <h3 style="font-size: 0.95rem; margin-bottom: 6px;">Your 7-Man Fantasy Roster</h3>
           <div id="modal-roster-list" class="mini-roster-grid"></div>
         </div>
 
         <div class="modal-links-summary">
-          <h3>⚡ Chemistry Links Triggered</h3>
+          <h3 style="font-size: 0.95rem; margin-bottom: 6px;">⚡ Chemistry Links Triggered</h3>
           <div id="modal-links-list" class="mini-links-feed"></div>
         </div>
 
@@ -457,7 +331,10 @@
 
   </div>
 
+  <!-- Game Scripts -->
+  <script src="stadium_canvas.js"></script>
   <script src="audio.js"></script>
+  <script src="cards_engine.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

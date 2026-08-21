@@ -1,5 +1,5 @@
 /**
- * 17-0 NFL Draft & Chemistry Strategy Game — Pack Opening & Card Fan Client
+ * 17-0 NFL Ultimate Team — Game Orchestrator & Animation Controller
  */
 
 // Application State
@@ -105,7 +105,7 @@ function getEligiblePositions() {
   return positions.filter((p) => autoAssignSlot(p) !== null);
 }
 
-// Robust image URL helper with proxy fallback for Discord iframe CSP
+// Image URL helper with image proxy for Discord iframe CSP
 function getPlayerPhotoUrl(p) {
   if (!p) return '';
   const rawUrl = p.headshot_url || (p.espn_id ? `https://a.espncdn.com/combiner/i?img=/i/headshots/nfl/players/full/${p.espn_id}.png&w=350&h=254` : '');
@@ -113,7 +113,7 @@ function getPlayerPhotoUrl(p) {
   return `/api/image-proxy?url=${encodeURIComponent(rawUrl)}`;
 }
 
-// Robust API fetch helper
+// API fetch helper with relative fallback for Discord activity proxy
 async function fetchApi(url, options = {}) {
   try {
     const res = await fetch(url, options);
@@ -172,13 +172,22 @@ function ripOpenPack() {
   window.soundEngine.playPackTear();
   el.boosterPack.classList.add('tearing');
 
+  // Trigger celebratory confetti burst on rip
+  if (window.confetti) {
+    window.confetti({
+      particleCount: 50,
+      spread: 70,
+      origin: { y: 0.6 },
+    });
+  }
+
   setTimeout(() => {
     state.stage = 'FANNED';
     el.packStageView.style.display = 'none';
     el.fannedStageView.style.display = 'flex';
     renderDraftPack();
     updateFilterTabs();
-  }, 400);
+  }, 420);
 }
 
 // Reroll Team
@@ -249,7 +258,7 @@ async function draftPlayer(player, cardElement) {
     return;
   }
 
-  // Highlight chosen card
+  // Mark chosen card
   cardElement.classList.add('chosen');
   window.soundEngine.playDraft();
 
@@ -288,7 +297,7 @@ async function draftPlayer(player, cardElement) {
     return;
   }
 
-  // Advance to next round & show next booster pack
+  // Advance to next round & drop next booster pack
   setTimeout(async () => {
     state.round += 1;
     el.currentRound.textContent = state.round;
@@ -338,30 +347,31 @@ function renderTabletopCards() {
 
     if (p) {
       const hasChem = p.applied_bonuses && p.applied_bonuses.length > 0;
+      const tier = window.CardsEngine.getCardTier(p);
       const photoSrc = getPlayerPhotoUrl(p);
 
       slotContainer.innerHTML = `
-        <div class="trading-card ${hasChem ? 'chemistry-active' : ''}">
-          <div class="card-header-bar">
-            <span class="slot-pos-badge ${p.position.toLowerCase()}">${slot}</span>
-            <span class="card-team-tag">${p.drafted_team}</span>
+        <div class="card-inner ${tier.border} ${hasChem ? 'superstar-hologram' : ''}">
+          <div class="card-top-bar">
+            <span class="pos-shield pos-${p.position.toLowerCase()}">${slot}</span>
+            <span class="team-tag">${p.drafted_team}</span>
           </div>
-          <div class="card-photo-wrap">
-            ${photoSrc ? `<img src="${photoSrc}" class="card-headshot-img" alt="${p.name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">` : ''}
-            <div class="card-fallback-avatar" style="${photoSrc ? 'display:none;' : 'display:block;'}">🏈</div>
+          <div class="card-portrait-wrap">
+            ${photoSrc ? `<img src="${photoSrc}" class="portrait-img" alt="${p.name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">` : ''}
+            <div class="portrait-fallback" style="${photoSrc ? 'display:none;' : 'display:flex;'}">🏈</div>
           </div>
-          <div class="card-info-wrap">
-            <div class="card-player-name">${p.name}</div>
-            <div class="card-fppg-badge">
-              <span class="card-fppg-val">${p.base_fppg.toFixed(1)}</span>
-              <span class="card-fppg-lbl">FPPG</span>
+          <div class="card-bottom-plate">
+            <div class="player-name">${p.name}</div>
+            <div class="rating-strip">
+              <span class="rating-label">PPR</span>
+              <span class="rating-value tier-text-${tier.id}">${p.base_fppg.toFixed(1)}</span>
             </div>
           </div>
         </div>
       `;
     } else {
       const posClass = slot.startsWith('WR') ? 'wr' : slot.startsWith('RB') ? 'rb' : slot.toLowerCase();
-      const hint = slot === 'FLX' ? 'RB/WR/TE' : 'Open';
+      const hint = slot === 'FLX' ? 'RB/WR/TE' : 'Open Slot';
       slotContainer.innerHTML = `
         <div class="slot-placeholder">
           <span class="slot-pos-badge ${posClass}">${slot}</span>
@@ -406,46 +416,29 @@ function renderDraftPack() {
 
   if (filtered.length === 0) {
     el.playerCardPack.innerHTML = `
-      <div style="grid-column: 1 / -1; text-align: center; padding: 30px; color: #64748b;">
-        <span>❌ No available players found for your open slots.</span><br>
-        <span>Try rerolling the team or year!</span>
+      <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: #64748b;">
+        <span style="font-size: 1.1rem; font-weight: 700;">❌ No available players found for your open slots.</span><br>
+        <span style="font-size: 0.85rem; color: #94a3b8;">Try rerolling the team or year!</span>
       </div>
     `;
     return;
   }
 
+  const totalCards = filtered.length;
+
   filtered.forEach((p, idx) => {
     const card = document.createElement('div');
     const isDrafted = Object.values(state.roster).some((dp) => dp && dp.player_id === p.player_id);
+    const photoUrl = getPlayerPhotoUrl(p);
 
     card.className = `draft-card ${isDrafted ? 'drafted' : ''}`;
-    card.style.animationDelay = `${idx * 0.03}s`;
+    card.style.animationDelay = `${idx * 0.035}s`;
 
-    const pos = p.position.toUpperCase();
-    const posClass = pos.toLowerCase();
-    const fppg = parseFloat(p.ppr_fppg || 0).toFixed(1);
-    const college = p.college || 'N/A';
-    const draftYear = p.draft_year ? `'${String(p.draft_year).slice(2)}` : 'UDFA';
-    const photoSrc = getPlayerPhotoUrl(p);
+    // Generate Card HTML using CardsEngine
+    card.innerHTML = window.CardsEngine.createCardHTML(p, { photoUrl, isDrafted });
 
-    card.innerHTML = `
-      <div class="card-header-bar">
-        <span class="slot-pos-badge ${posClass}">${pos}</span>
-        <span class="card-team-tag">${state.team}</span>
-      </div>
-      <div class="card-photo-wrap">
-        ${photoSrc ? `<img src="${photoSrc}" class="card-headshot-img" alt="${p.name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">` : ''}
-        <div class="card-fallback-avatar" style="${photoSrc ? 'display:none;' : 'display:block;'}">🏈</div>
-      </div>
-      <div class="card-info-wrap">
-        <div class="card-player-name">${p.name} ${isDrafted ? '*(Drafted)*' : ''}</div>
-        <div class="card-meta-line">${college} · ${draftYear}</div>
-        <div class="card-fppg-badge">
-          <span class="card-fppg-val">${fppg}</span>
-          <span class="card-fppg-lbl">FPPG</span>
-        </div>
-      </div>
-    `;
+    // Attach 3D physics tilt
+    window.CardsEngine.attach3DTilt(card);
 
     if (!isDrafted) {
       card.onclick = () => draftPlayer(p, card);
@@ -453,9 +446,9 @@ function renderDraftPack() {
 
     el.playerCardPack.appendChild(card);
 
-    // Staggered deal sound effect
-    if (idx < 6) {
-      window.soundEngine.playCardDeal(idx * 0.03);
+    // Staggered deal audio
+    if (idx < 7) {
+      window.soundEngine.playCardDeal(idx * 0.035);
     }
   });
 }
@@ -527,7 +520,7 @@ function showGameOverModal() {
       modalLinksList.appendChild(pill);
     });
   } else {
-    modalLinksList.innerHTML = '<span class="card-meta-line">No active chemistry bonuses triggered.</span>';
+    modalLinksList.innerHTML = '<span class="player-subline">No active chemistry bonuses triggered.</span>';
   }
 
   el.gameOverModal.style.display = 'flex';
@@ -631,7 +624,6 @@ function resetGame() {
 
 // Event Listeners
 function setupEvents() {
-  // Pack Rip interaction
   el.boosterPack.onclick = ripOpenPack;
 
   el.filterTabs.forEach((tab) => {
@@ -702,6 +694,9 @@ async function initDiscordSdk() {
 
 // App Bootstrap
 window.addEventListener('DOMContentLoaded', async () => {
+  // Start 60 FPS Stadium Canvas Background
+  new window.StadiumCanvasEngine('stadium-canvas');
+
   setupEvents();
   await initDiscordSdk();
   await fetchRoll();

@@ -350,6 +350,16 @@ async def serve_audio_js(request: web.Request) -> web.FileResponse:
     return web.FileResponse(ACTIVITY_DIR / "audio.js")
 
 
+async def serve_stadium_canvas_js(request: web.Request) -> web.FileResponse:
+    """Serves stadium_canvas.js directly from root or /static."""
+    return web.FileResponse(ACTIVITY_DIR / "stadium_canvas.js")
+
+
+async def serve_cards_engine_js(request: web.Request) -> web.FileResponse:
+    """Serves cards_engine.js directly from root or /static."""
+    return web.FileResponse(ACTIVITY_DIR / "cards_engine.js")
+
+
 def create_app() -> web.Application:
     """Constructs the aiohttp web application."""
     app = web.Application()
@@ -383,6 +393,8 @@ def create_app() -> web.Application:
         app.router.add_get("/style.css", serve_style)
         app.router.add_get("/app.js", serve_app_js)
         app.router.add_get("/audio.js", serve_audio_js)
+        app.router.add_get("/stadium_canvas.js", serve_stadium_canvas_js)
+        app.router.add_get("/cards_engine.js", serve_cards_engine_js)
         app.router.add_static("/static", ACTIVITY_DIR, name="static")
 
     return app
