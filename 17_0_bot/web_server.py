@@ -332,8 +332,22 @@ async def api_leaderboard_save(request: web.Request) -> web.Response:
 
 async def serve_index(request: web.Request) -> web.FileResponse:
     """Serves the main Activity index.html."""
-    index_file = ACTIVITY_DIR / "index.html"
-    return web.FileResponse(index_file)
+    return web.FileResponse(ACTIVITY_DIR / "index.html")
+
+
+async def serve_style(request: web.Request) -> web.FileResponse:
+    """Serves style.css directly from root or /static."""
+    return web.FileResponse(ACTIVITY_DIR / "style.css")
+
+
+async def serve_app_js(request: web.Request) -> web.FileResponse:
+    """Serves app.js directly from root or /static."""
+    return web.FileResponse(ACTIVITY_DIR / "app.js")
+
+
+async def serve_audio_js(request: web.Request) -> web.FileResponse:
+    """Serves audio.js directly from root or /static."""
+    return web.FileResponse(ACTIVITY_DIR / "audio.js")
 
 
 def create_app() -> web.Application:
@@ -363,9 +377,12 @@ def create_app() -> web.Application:
     app.router.add_get("/api/leaderboard", api_leaderboard_get)
     app.router.add_post("/api/leaderboard/save", api_leaderboard_save)
 
-    # Frontend routes
+    # Frontend routes (support both root and /static)
     if ACTIVITY_DIR.exists():
         app.router.add_get("/", serve_index)
+        app.router.add_get("/style.css", serve_style)
+        app.router.add_get("/app.js", serve_app_js)
+        app.router.add_get("/audio.js", serve_audio_js)
         app.router.add_static("/static", ACTIVITY_DIR, name="static")
 
     return app
