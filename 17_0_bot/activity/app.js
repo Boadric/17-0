@@ -59,6 +59,7 @@ const el = {
   rerollTeamBtn: document.getElementById('reroll-team-btn'),
   rerollSeasonBtn: document.getElementById('reroll-season-btn'),
   // Fanned Stage View
+  interactiveStage: document.getElementById('interactive-stage'),
   fannedStageView: document.getElementById('fanned-stage-view'),
   fannedEmoji: document.getElementById('fanned-emoji'),
   fannedSeason: document.getElementById('fanned-season'),
@@ -447,7 +448,7 @@ function renderDraftPack() {
 
   const pagePlayers = filtered.slice(state.fanPage * state.fanPageSize, (state.fanPage + 1) * state.fanPageSize);
   const totalCards = pagePlayers.length;
-  const containerWidth = el.playerCardPack.clientWidth || window.innerWidth;
+  const containerWidth = el.playerCardPack.getBoundingClientRect().width || el.interactiveStage.clientWidth || window.innerWidth;
 
   pagePlayers.forEach((p, idx) => {
     const card = document.createElement('div');
@@ -457,7 +458,7 @@ function renderDraftPack() {
     card.className = `draft-card ${isDrafted ? 'drafted' : ''}`;
     card.style.animationDelay = `${idx * 0.04}s`;
 
-    // 3D Horizontal Fan Transform Math
+    // 3D Horizontal Fan Transform Math with actual bounding width
     const fanTransform = window.CardsEngine.calculateFanTransform(totalCards, idx, containerWidth);
     card.style.transform = `translate3d(${fanTransform.translateX}px, ${fanTransform.translateY}px, 0px) rotate(${fanTransform.rotation}deg)`;
     card.style.zIndex = `${fanTransform.zIndex}`;
@@ -720,7 +721,16 @@ function setupEvents() {
   document.getElementById('play-again-btn').onclick = resetGame;
   document.getElementById('save-leaderboard-btn').onclick = saveGameToLeaderboard;
 
-  // Window resize re-fans cards smoothly
+  // Responsive Resize Observer on interactive stage & window resize
+  if (window.ResizeObserver && el.interactiveStage) {
+    const ro = new ResizeObserver(() => {
+      if (state.stage === 'FANNED') {
+        renderDraftPack();
+      }
+    });
+    ro.observe(el.interactiveStage);
+  }
+
   window.addEventListener('resize', () => {
     if (state.stage === 'FANNED') {
       renderDraftPack();

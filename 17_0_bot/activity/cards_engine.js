@@ -77,12 +77,14 @@ class CardsEngine {
     const mid = (totalCards - 1) / 2;
     const offset = currentIndex - mid; // e.g. for 5 cards: -2, -1, 0, 1, 2
 
-    // Dynamic horizontal spread based on screen width
-    const cardSpacing = Math.min(130, Math.max(70, (containerWidth * 0.75) / totalCards));
+    // Dynamic horizontal spread based on the actual measured container width
+    const validWidth = Math.max(300, containerWidth || window.innerWidth || 800);
+    // Scales dynamically from docked 360px sidebar up to 4K widescreen desktop
+    const cardSpacing = Math.min(180, Math.max(48, (validWidth * 0.76) / totalCards));
     const translateX = offset * cardSpacing;
 
     // Gentle parabolic curve dip
-    const translateY = Math.pow(Math.abs(offset), 1.6) * 7;
+    const translateY = Math.pow(Math.abs(offset), 1.5) * 6;
 
     // Smooth rotational arc from -22deg to +22deg
     const maxRot = Math.min(26, totalCards * 4.5);
