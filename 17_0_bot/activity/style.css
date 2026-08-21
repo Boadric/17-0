@@ -243,6 +243,17 @@ html, body {
   flex-direction: column;
 }
 
+/* Ensure Stage View & Container fill available height properly */
+#fanned-stage-view {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
 /* =========================================================
    PHASE 1: Fullscreen 3D Pack Opening Scene
    ========================================================= */
@@ -522,30 +533,37 @@ html, body {
   cursor: pointer;
 }
 
-/* 3D Trading Card Tabletop Stage */
-#player-card-pack, .cards-fan-arc-container {
-  display: flex;
-  flex-direction: row;
+/* Horizontal Card Fan Row */
+#player-card-pack, 
+.cards-fan-arc-container {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
   justify-content: center;
   align-items: center;
-  gap: 1.25rem;
+  gap: 20px;
+  flex: 1 1 auto;
+  min-height: 0;
   width: 100%;
-  height: 100%;
-  max-height: 480px;
+  padding: 16px;
   overflow-x: auto;
   overflow-y: hidden;
-  padding: 1rem;
-  position: relative;
+  box-sizing: border-box;
 }
 
-/* 3D Collectible Trading Card (Standard 5/7 Ratio) */
-.draft-card, .player-card, .booster-card, .card {
-  width: auto;
-  height: 100%;
-  max-height: 380px;
-  aspect-ratio: 5 / 7; /* Standard trading card ratio */
-  flex: 0 0 auto;
-  box-sizing: border-box;
+/* Hard-lock Card Dimensions (Portrait 2.5:3.5 Ratio) */
+.draft-card, 
+.player-card, 
+.booster-card, 
+.card {
+  width: 220px !important;
+  height: 308px !important;
+  min-width: 220px !important;
+  max-width: 220px !important;
+  min-height: 308px !important;
+  max-height: 308px !important;
+  flex: 0 0 220px !important;
+  box-sizing: border-box !important;
   position: relative;
   border-radius: 12px;
   cursor: pointer;
@@ -559,15 +577,14 @@ html, body {
 }
 
 .card-inner {
-  width: 100%;
-  height: 100%;
-  aspect-ratio: 5 / 7;
+  width: 100% !important;
+  height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
   background: linear-gradient(145deg, #131e36, #090e1a);
   border-radius: 12px;
   border: 2px solid var(--border-bright);
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.7);
-  display: flex;
-  flex-direction: column;
   overflow: hidden;
   position: relative;
 }
@@ -805,38 +822,35 @@ html, body {
   gap: 4px;
 }
 
+/* Roster Section & 7-Man Slots */
 #table-cards-grid {
-  display: flex;
-  flex-direction: row;
+  display: flex !important;
+  flex-direction: row !important;
   justify-content: center;
   align-items: center;
-  gap: 0.85rem;
+  gap: 12px;
   width: 100%;
   flex: 1;
-  margin-top: 4px;
 }
 
 .table-card-slot {
-  height: 105px;
-  aspect-ratio: 5 / 7;
-  flex: 0 0 auto;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  width: 85px !important;
+  height: 119px !important;
+  min-width: 85px !important;
+  max-width: 85px !important;
+  min-height: 119px !important;
+  max-height: 119px !important;
+  flex: 0 0 85px !important;
   border-radius: 8px;
   position: relative;
   overflow: hidden;
+  box-sizing: border-box;
 }
 
 .table-card-slot .card-inner,
 .table-card-slot .slot-placeholder {
-  width: 100%;
-  height: 100%;
-  aspect-ratio: 5 / 7;
-}
-
-.table-card-slot .card-inner {
-  border-radius: 8px;
+  width: 100% !important;
+  height: 100% !important;
 }
 
 .slot-placeholder {
