@@ -1,5 +1,5 @@
 /**
- * 17-0 NFL Ultimate Team — Game Orchestrator & Animation Controller
+ * 17-0 NFL Ultimate Team — 100% Fullscreen Tabletop Game Orchestrator
  */
 
 // Application State
@@ -14,6 +14,8 @@ const state = {
   availablePlayers: [],
   positionFilter: 'ALL',
   searchQuery: '',
+  fanPage: 0,
+  fanPageSize: 7,
   teamRerollsLeft: 1,
   seasonRerollsLeft: 1,
   stage: 'PACK', // 'PACK' or 'FANNED'
@@ -65,6 +67,9 @@ const el = {
   clearSearch: document.getElementById('clear-search'),
   playerCardPack: document.getElementById('player-card-pack'),
   filterTabs: document.querySelectorAll('.filter-tab'),
+  fanPrevBtn: document.getElementById('fan-prev-btn'),
+  fanNextBtn: document.getElementById('fan-next-btn'),
+  fanPageIndicator: document.getElementById('fan-page-indicator'),
   // Roster Bar
   chemistryFeed: document.getElementById('chemistry-feed'),
   activeChemCount: document.getElementById('active-chem-count'),
@@ -77,7 +82,7 @@ const el = {
   soundBtn: document.getElementById('sound-btn'),
 };
 
-// Helper: Auto-slot assignment logic
+// Auto-slot assignment logic
 function autoAssignSlot(position) {
   const pos = position.toUpperCase();
   if (pos === 'QB') {
@@ -139,6 +144,7 @@ async function fetchRoll() {
     state.color = data.color;
     state.emoji = data.emoji;
     state.availablePlayers = data.players || [];
+    state.fanPage = 0;
     renderPackStage();
   } catch (err) {
     console.error('Error fetching roll:', err);
@@ -164,7 +170,7 @@ function renderPackStage() {
   el.fannedStageView.style.display = 'none';
 }
 
-// Tear Open the Booster Pack & Fan Out Cards
+// Tear Open the Booster Pack & Fan Out Cards in 3D Arc
 function ripOpenPack() {
   if (state.isTearing) return;
   state.isTearing = true;
@@ -175,9 +181,9 @@ function ripOpenPack() {
   // Trigger celebratory confetti burst on rip
   if (window.confetti) {
     window.confetti({
-      particleCount: 50,
-      spread: 70,
-      origin: { y: 0.6 },
+      particleCount: 60,
+      spread: 80,
+      origin: { y: 0.55 },
     });
   }
 
@@ -215,6 +221,7 @@ async function rerollTeam(e) {
     state.color = data.color;
     state.emoji = data.emoji;
     state.availablePlayers = data.players || [];
+    state.fanPage = 0;
     renderPackStage();
   } catch (err) {
     console.error('Error rerolling team:', err);
@@ -244,6 +251,7 @@ async function rerollSeason(e) {
     state.season = data.season;
     state.teamName = data.team_name;
     state.availablePlayers = data.players || [];
+    state.fanPage = 0;
     renderPackStage();
   } catch (err) {
     console.error('Error rerolling season:', err);
@@ -303,6 +311,7 @@ async function draftPlayer(player, cardElement) {
     el.currentRound.textContent = state.round;
     state.positionFilter = 'ALL';
     state.searchQuery = '';
+    state.fanPage = 0;
     el.searchInput.value = '';
     el.clearSearch.style.display = 'none';
     el.playerCardPack.classList.remove('shuffling-away');
@@ -371,7 +380,7 @@ function renderTabletopCards() {
       `;
     } else {
       const posClass = slot.startsWith('WR') ? 'wr' : slot.startsWith('RB') ? 'rb' : slot.toLowerCase();
-      const hint = slot === 'FLX' ? 'RB/WR/TE' : 'Open Slot';
+      const hint = slot === 'FLX' ? 'RB/WR/TE' : 'Open';
       slotContainer.innerHTML = `
         <div class="slot-placeholder">
           <span class="slot-pos-badge ${posClass}">${slot}</span>
@@ -396,7 +405,7 @@ function renderTabletopCards() {
   }
 }
 
-// Render Fanned Out Available Weapons Pack
+// Render 3D Horizontal Card Fan Arc (No Vertical Scrollbar!)
 function renderDraftPack() {
   const eligible = getEligiblePositions();
   let filtered = state.availablePlayers;
@@ -416,29 +425,48 @@ function renderDraftPack() {
 
   if (filtered.length === 0) {
     el.playerCardPack.innerHTML = `
-      <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: #64748b;">
+      <div style="text-align: center; padding: 30px; color: #64748b;">
         <span style="font-size: 1.1rem; font-weight: 700;">❌ No available players found for your open slots.</span><br>
         <span style="font-size: 0.85rem; color: #94a3b8;">Try rerolling the team or year!</span>
       </div>
     `;
+    el.fanPrevBtn.disabled = true;
+    el.fanNextBtn.disabled = true;
+    el.fanPageIndicator.textContent = '0 / 0';
     return;
   }
 
-  const totalCards = filtered.length;
+  // Calculate pages for horizontal fan
+  const totalPages = Math.ceil(filtered.length / state.fanPageSize);
+  state.fanPage = Math.min(state.fanPage, totalPages - 1);
+  if (state.fanPage < 0) state.fanPage = 0;
 
-  filtered.forEach((p, idx) => {
+  el.fanPageIndicator.textContent = `${state.fanPage + 1} / ${totalPages}`;
+  el.fanPrevBtn.disabled = state.fanPage === 0;
+  el.fanNextBtn.disabled = state.fanPage >= totalPages - 1;
+
+  const pagePlayers = filtered.slice(state.fanPage * state.fanPageSize, (state.fanPage + 1) * state.fanPageSize);
+  const totalCards = pagePlayers.length;
+  const containerWidth = el.playerCardPack.clientWidth || window.innerWidth;
+
+  pagePlayers.forEach((p, idx) => {
     const card = document.createElement('div');
     const isDrafted = Object.values(state.roster).some((dp) => dp && dp.player_id === p.player_id);
     const photoUrl = getPlayerPhotoUrl(p);
 
     card.className = `draft-card ${isDrafted ? 'drafted' : ''}`;
-    card.style.animationDelay = `${idx * 0.035}s`;
+    card.style.animationDelay = `${idx * 0.04}s`;
+
+    // 3D Horizontal Fan Transform Math
+    const fanTransform = window.CardsEngine.calculateFanTransform(totalCards, idx, containerWidth);
+    card.style.transform = `translate3d(${fanTransform.translateX}px, ${fanTransform.translateY}px, 0px) rotate(${fanTransform.rotation}deg)`;
+    card.style.zIndex = `${fanTransform.zIndex}`;
 
     // Generate Card HTML using CardsEngine
     card.innerHTML = window.CardsEngine.createCardHTML(p, { photoUrl, isDrafted });
 
     // Attach 3D physics tilt
-    window.CardsEngine.attach3DTilt(card);
+    window.CardsEngine.attach3DTilt(card, fanTransform);
 
     if (!isDrafted) {
       card.onclick = () => draftPlayer(p, card);
@@ -448,7 +476,7 @@ function renderDraftPack() {
 
     // Staggered deal audio
     if (idx < 7) {
-      window.soundEngine.playCardDeal(idx * 0.035);
+      window.soundEngine.playCardDeal(idx * 0.04);
     }
   });
 }
@@ -609,6 +637,7 @@ function resetGame() {
   };
   state.positionFilter = 'ALL';
   state.searchQuery = '';
+  state.fanPage = 0;
 
   el.currentRound.textContent = 1;
   el.teamRerollsLeft.textContent = 1;
@@ -629,23 +658,40 @@ function setupEvents() {
   el.filterTabs.forEach((tab) => {
     tab.onclick = () => {
       state.positionFilter = tab.dataset.pos;
+      state.fanPage = 0;
       updateFilterTabs();
       renderDraftPack();
       window.soundEngine.playClick();
     };
   });
 
+  el.fanPrevBtn.onclick = () => {
+    if (state.fanPage > 0) {
+      state.fanPage -= 1;
+      renderDraftPack();
+      window.soundEngine.playCardShuffle();
+    }
+  };
+
+  el.fanNextBtn.onclick = () => {
+    state.fanPage += 1;
+    renderDraftPack();
+    window.soundEngine.playCardShuffle();
+  };
+
   el.rerollTeamBtn.onclick = rerollTeam;
   el.rerollSeasonBtn.onclick = rerollSeason;
 
   el.searchInput.oninput = (e) => {
     state.searchQuery = e.target.value;
+    state.fanPage = 0;
     el.clearSearch.style.display = state.searchQuery ? 'block' : 'none';
     renderDraftPack();
   };
 
   el.clearSearch.onclick = () => {
     state.searchQuery = '';
+    state.fanPage = 0;
     el.searchInput.value = '';
     el.clearSearch.style.display = 'none';
     renderDraftPack();
@@ -673,9 +719,16 @@ function setupEvents() {
   document.getElementById('restart-btn').onclick = resetGame;
   document.getElementById('play-again-btn').onclick = resetGame;
   document.getElementById('save-leaderboard-btn').onclick = saveGameToLeaderboard;
+
+  // Window resize re-fans cards smoothly
+  window.addEventListener('resize', () => {
+    if (state.stage === 'FANNED') {
+      renderDraftPack();
+    }
+  });
 }
 
-// Initialize Discord Embedded App SDK (if in Discord Activity)
+// Initialize Discord Embedded App SDK
 async function initDiscordSdk() {
   if (window.DiscordSDK) {
     try {

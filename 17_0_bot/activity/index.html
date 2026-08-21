@@ -57,76 +57,13 @@
       </div>
     </header>
 
-    <!-- Main Game Board -->
+    <!-- Main Game Board (100% Fullscreen, Zero Scrollbars) -->
     <main id="board-container">
       
-      <!-- 7-Slot Fantasy Roster Tabletop Bar -->
-      <section id="roster-bar-section">
-        <div class="roster-bar-header">
-          <div class="section-title">
-            <span class="field-icon">🏈</span>
-            <span>YOUR 7-MAN ROSTER</span>
-          </div>
-          <div id="chemistry-summary" class="chem-counter">
-            <span class="chem-bolt">⚡</span>
-            <span id="active-chem-count">0 Links Active</span>
-          </div>
-        </div>
-
-        <!-- 7-Card Grid on Table -->
-        <div id="table-cards-grid">
-          <div class="table-card-slot" id="slot-WR1" data-slot="WR1">
-            <div class="slot-placeholder">
-              <span class="slot-pos-badge wr">WR1</span>
-              <span class="slot-hint">Open Slot</span>
-            </div>
-          </div>
-          <div class="table-card-slot" id="slot-QB" data-slot="QB">
-            <div class="slot-placeholder">
-              <span class="slot-pos-badge qb">QB</span>
-              <span class="slot-hint">Open Slot</span>
-            </div>
-          </div>
-          <div class="table-card-slot" id="slot-WR2" data-slot="WR2">
-            <div class="slot-placeholder">
-              <span class="slot-pos-badge wr">WR2</span>
-              <span class="slot-hint">Open Slot</span>
-            </div>
-          </div>
-          <div class="table-card-slot" id="slot-TE" data-slot="TE">
-            <div class="slot-placeholder">
-              <span class="slot-pos-badge te">TE</span>
-              <span class="slot-hint">Open Slot</span>
-            </div>
-          </div>
-          <div class="table-card-slot" id="slot-RB1" data-slot="RB1">
-            <div class="slot-placeholder">
-              <span class="slot-pos-badge rb">RB1</span>
-              <span class="slot-hint">Open Slot</span>
-            </div>
-          </div>
-          <div class="table-card-slot" id="slot-RB2" data-slot="RB2">
-            <div class="slot-placeholder">
-              <span class="slot-pos-badge rb">RB2</span>
-              <span class="slot-hint">Open Slot</span>
-            </div>
-          </div>
-          <div class="table-card-slot" id="slot-FLX" data-slot="FLX">
-            <div class="slot-placeholder">
-              <span class="slot-pos-badge flx">FLX</span>
-              <span class="slot-hint">RB/WR/TE</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Dynamic Chemistry Link Ticker -->
-        <div id="chemistry-feed" class="chem-feed-container"></div>
-      </section>
-
-      <!-- Main Stage: Booster Pack Opening OR Fanned Out Cards Desk -->
+      <!-- Middle 65-70%: Tabletop Arena (Pack Opening OR 3D Horizontal Card Fan Arc) -->
       <section id="interactive-stage">
         
-        <!-- STAGE 1: 3D FOIL BOOSTER PACK VIEW -->
+        <!-- PHASE 1: Fullscreen 3D Pack Opening Scene -->
         <div id="pack-stage-view" class="stage-view">
           
           <div class="booster-pack-wrapper">
@@ -176,7 +113,7 @@
 
         </div>
 
-        <!-- STAGE 2: FANNED OUT CARDS ON TABLE VIEW -->
+        <!-- PHASE 2: 3D Horizontal Card Fan Arc on Table -->
         <div id="fanned-stage-view" class="stage-view" style="display: none;">
           
           <!-- Stage Controls & Filters -->
@@ -196,6 +133,13 @@
               <button class="filter-tab" data-pos="TE">TE</button>
             </div>
 
+            <!-- Fan Pagination Navigation -->
+            <div class="fan-nav-bar">
+              <button id="fan-prev-btn" class="fan-nav-btn" title="Previous Cards">◀ PREV</button>
+              <span id="fan-page-indicator" style="font-size: 0.7rem; font-weight: 700; color: #94a3b8;">1 / 1</span>
+              <button id="fan-next-btn" class="fan-nav-btn" title="Next Cards">NEXT ▶</button>
+            </div>
+
             <!-- Search Input -->
             <div class="search-input-wrap">
               <span class="search-icon">🔍</span>
@@ -204,15 +148,76 @@
             </div>
           </div>
 
-          <!-- Fanned Cards Desk Grid -->
-          <div class="fanned-cards-scroll-area">
-            <div id="player-card-pack" class="cards-fan-grid">
-              <!-- Dynamically Fanned Cards Rendered Here -->
-            </div>
+          <!-- 3D Horizontal Arc Fan Centerpiece -->
+          <div id="player-card-pack" class="cards-fan-arc-container">
+            <!-- Dynamically Fanned Cards Rendered in a 3D Arc -->
           </div>
 
         </div>
 
+      </section>
+
+      <!-- Bottom 25-30%: Integrated 7-Slot Fantasy Roster Formation Bar -->
+      <section id="roster-bar-section">
+        <div class="roster-bar-header">
+          <div class="section-title">
+            <span class="field-icon">🏈</span>
+            <span>YOUR 7-MAN ROSTER</span>
+          </div>
+          <div id="chemistry-summary" class="chem-counter">
+            <span class="chem-bolt">⚡</span>
+            <span id="active-chem-count">0 Links Active</span>
+          </div>
+        </div>
+
+        <!-- 7-Card Grid on Field Table -->
+        <div id="table-cards-grid">
+          <div class="table-card-slot" id="slot-WR1" data-slot="WR1">
+            <div class="slot-placeholder">
+              <span class="slot-pos-badge wr">WR1</span>
+              <span class="slot-hint">Open</span>
+            </div>
+          </div>
+          <div class="table-card-slot" id="slot-QB" data-slot="QB">
+            <div class="slot-placeholder">
+              <span class="slot-pos-badge qb">QB</span>
+              <span class="slot-hint">Open</span>
+            </div>
+          </div>
+          <div class="table-card-slot" id="slot-WR2" data-slot="WR2">
+            <div class="slot-placeholder">
+              <span class="slot-pos-badge wr">WR2</span>
+              <span class="slot-hint">Open</span>
+            </div>
+          </div>
+          <div class="table-card-slot" id="slot-TE" data-slot="TE">
+            <div class="slot-placeholder">
+              <span class="slot-pos-badge te">TE</span>
+              <span class="slot-hint">Open</span>
+            </div>
+          </div>
+          <div class="table-card-slot" id="slot-RB1" data-slot="RB1">
+            <div class="slot-placeholder">
+              <span class="slot-pos-badge rb">RB1</span>
+              <span class="slot-hint">Open</span>
+            </div>
+          </div>
+          <div class="table-card-slot" id="slot-RB2" data-slot="RB2">
+            <div class="slot-placeholder">
+              <span class="slot-pos-badge rb">RB2</span>
+              <span class="slot-hint">Open</span>
+            </div>
+          </div>
+          <div class="table-card-slot" id="slot-FLX" data-slot="FLX">
+            <div class="slot-placeholder">
+              <span class="slot-pos-badge flx">FLX</span>
+              <span class="slot-hint">RB/WR/TE</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dynamic Chemistry Link Ticker -->
+        <div id="chemistry-feed" class="chem-feed-container"></div>
       </section>
 
     </main>

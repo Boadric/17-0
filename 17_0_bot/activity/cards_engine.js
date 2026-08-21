@@ -1,5 +1,5 @@
 /**
- * 17-0 Cards Engine: Tiers, 3D Physics Tilt, Holographic Shaders & Fan Math
+ * 17-0 Cards Engine: 3D Horizontal Fan Arc Math, Tiers, Shaders & Inspect Modal
  */
 
 const HISTORIC_SUPERSTARS = [
@@ -24,7 +24,7 @@ class CardsEngine {
         name: 'Historic Superstar',
         badge: '✨ SUPERSTAR',
         color: '#fbbf24',
-        border: 'holographic-superstar',
+        border: 'superstar-hologram',
         glow: 'rgba(251, 191, 36, 0.9)',
       };
     }
@@ -68,8 +68,39 @@ class CardsEngine {
     };
   }
 
+  // Calculate 3D Horizontal Fan Arc Transform for cards spread across the table
+  static calculateFanTransform(totalCards, currentIndex, containerWidth) {
+    if (totalCards <= 1) {
+      return { translateX: 0, translateY: 0, rotation: 0, zIndex: 10 };
+    }
+
+    const mid = (totalCards - 1) / 2;
+    const offset = currentIndex - mid; // e.g. for 5 cards: -2, -1, 0, 1, 2
+
+    // Dynamic horizontal spread based on screen width
+    const cardSpacing = Math.min(130, Math.max(70, (containerWidth * 0.75) / totalCards));
+    const translateX = offset * cardSpacing;
+
+    // Gentle parabolic curve dip
+    const translateY = Math.pow(Math.abs(offset), 1.6) * 7;
+
+    // Smooth rotational arc from -22deg to +22deg
+    const maxRot = Math.min(26, totalCards * 4.5);
+    const rotation = (offset / (mid || 1)) * (maxRot / 2);
+
+    // Center cards on top
+    const zIndex = 10 + Math.round(10 - Math.abs(offset));
+
+    return {
+      translateX: Math.round(translateX),
+      translateY: Math.round(translateY),
+      rotation: Math.round(rotation * 10) / 10,
+      zIndex: zIndex,
+    };
+  }
+
   // Attach 3D physics tilt & glare tracking to a card element
-  static attach3DTilt(cardElement) {
+  static attach3DTilt(cardElement, baseTransform) {
     if (!cardElement) return;
 
     const handleMove = (e) => {
@@ -80,23 +111,27 @@ class CardsEngine {
       const x = clientX - rect.left;
       const y = clientY - rect.top;
 
-      const normX = (x / rect.width - 0.5) * 2; // -1 to +1
-      const normY = (y / rect.height - 0.5) * 2; // -1 to +1
+      const normX = (x / rect.width - 0.5) * 2;
+      const normY = (y / rect.height - 0.5) * 2;
 
-      const rotateX = normY * -12;
-      const rotateY = normX * 12;
+      const tiltX = normY * -12;
+      const tiltY = normX * 12;
 
-      cardElement.style.transform = `perspective(800px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.06, 1.06, 1.06) translateZ(12px)`;
-      
+      // Lift from fan arc and apply tilt
+      cardElement.style.transform = `translate3d(${baseTransform.translateX}px, ${baseTransform.translateY - 32}px, 60px) rotate(${baseTransform.rotation + tiltY * 0.3}deg) rotateX(${tiltX}deg) rotateY(${tiltY}deg) scale(1.18)`;
+      cardElement.style.zIndex = '100';
+
       const glare = cardElement.querySelector('.card-glare-layer');
       if (glare) {
         glare.style.opacity = '1';
-        glare.style.background = `radial-gradient(circle at ${x}px ${y}px, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.05) 50%, transparent 70%)`;
+        glare.style.background = `radial-gradient(circle at ${x}px ${y}px, rgba(255,255,255,0.45) 0%, rgba(255,255,255,0.08) 50%, transparent 70%)`;
       }
     };
 
     const handleLeave = () => {
-      cardElement.style.transform = 'perspective(800px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1) translateZ(0)';
+      cardElement.style.transform = `translate3d(${baseTransform.translateX}px, ${baseTransform.translateY}px, 0px) rotate(${baseTransform.rotation}deg) scale(1)`;
+      cardElement.style.zIndex = `${baseTransform.zIndex}`;
+
       const glare = cardElement.querySelector('.card-glare-layer');
       if (glare) {
         glare.style.opacity = '0';
@@ -109,28 +144,6 @@ class CardsEngine {
     cardElement.addEventListener('touchend', handleLeave);
   }
 
-  // Calculate 3D Arc Fan angles for N cards on the table
-  static calculateFanArc(totalCards, currentIndex) {
-    if (totalCards <= 1) return { rotation: 0, translateY: 0, translateX: 0 };
-
-    const mid = (totalCards - 1) / 2;
-    const offset = currentIndex - mid; // e.g. -2, -1, 0, 1, 2
-
-    // Max rotation spread of ~24 degrees across the arc
-    const maxRot = Math.min(28, totalCards * 3.5);
-    const rotation = (offset / (mid || 1)) * (maxRot / 2);
-
-    // Parabolic dip in Y
-    const translateY = Math.abs(offset) * 6;
-    const translateX = offset * 2;
-
-    return {
-      rotation: Math.round(rotation * 10) / 10,
-      translateY: Math.round(translateY),
-      translateX: Math.round(translateX),
-    };
-  }
-
   // Render HTML for a complete 3D Trading Card
   static createCardHTML(player, options = {}) {
     const tier = this.getCardTier(player);
@@ -139,7 +152,6 @@ class CardsEngine {
     const college = player.college || 'N/A';
     const draftYear = player.draft_year ? `'${String(player.draft_year).slice(2)}` : 'UDFA';
     const isSuperstar = tier.id === 'superstar';
-    const isDrafted = options.isDrafted || false;
     const photoUrl = options.photoUrl || '';
     const team = player.team || player.drafted_team || 'NFL';
     const season = player.season || player.drafted_season || '';
