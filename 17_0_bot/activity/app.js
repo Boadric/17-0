@@ -460,7 +460,7 @@ function renderDraftPack() {
 
     // 3D Horizontal Fan Transform Math with actual bounding width
     const fanTransform = window.CardsEngine.calculateFanTransform(totalCards, idx, containerWidth);
-    card.style.transform = `translate3d(${fanTransform.translateX}px, ${fanTransform.translateY}px, 0px) rotate(${fanTransform.rotation}deg)`;
+    card.style.transform = `translate3d(calc(-50% + ${fanTransform.translateX}px), calc(-50% + ${fanTransform.translateY}px), 0px) rotate(${fanTransform.rotation}deg)`;
     card.style.zIndex = `${fanTransform.zIndex}`;
 
     // Generate Card HTML using CardsEngine

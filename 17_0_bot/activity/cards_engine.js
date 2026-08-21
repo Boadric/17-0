@@ -120,7 +120,7 @@ class CardsEngine {
       const tiltY = normX * 12;
 
       // Lift from fan arc and apply tilt
-      cardElement.style.transform = `translate3d(${baseTransform.translateX}px, ${baseTransform.translateY - 32}px, 60px) rotate(${baseTransform.rotation + tiltY * 0.3}deg) rotateX(${tiltX}deg) rotateY(${tiltY}deg) scale(1.18)`;
+      cardElement.style.transform = `translate3d(calc(-50% + ${baseTransform.translateX}px), calc(-50% + ${baseTransform.translateY - 32}px), 60px) rotate(${baseTransform.rotation + tiltY * 0.3}deg) rotateX(${tiltX}deg) rotateY(${tiltY}deg) scale(1.18)`;
       cardElement.style.zIndex = '100';
 
       const glare = cardElement.querySelector('.card-glare-layer');
@@ -131,7 +131,7 @@ class CardsEngine {
     };
 
     const handleLeave = () => {
-      cardElement.style.transform = `translate3d(${baseTransform.translateX}px, ${baseTransform.translateY}px, 0px) rotate(${baseTransform.rotation}deg) scale(1)`;
+      cardElement.style.transform = `translate3d(calc(-50% + ${baseTransform.translateX}px), calc(-50% + ${baseTransform.translateY}px), 0px) rotate(${baseTransform.rotation}deg) scale(1)`;
       cardElement.style.zIndex = `${baseTransform.zIndex}`;
 
       const glare = cardElement.querySelector('.card-glare-layer');
