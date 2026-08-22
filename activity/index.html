@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>17-0: NFL Ultimate Team Draft & Chemistry Strategy Game</title>
+  
+  <!-- Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Teko:wght@500;700&family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+  
+  <!-- Discord Embedded App SDK (for Activity Mode) -->
+  <script src="https://cdn.jsdelivr.net/npm/@discord/embedded-app-sdk@1.1.0/lib/index.min.js"></script>
+  <!-- Confetti Celebration -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Ambient Stadium 60 FPS Canvas Backdrop -->
+  <canvas id="stadium-canvas"></canvas>
+
+  <div id="app-container">
+    
+    <!-- Top Broadcast HUD -->
+    <header id="game-header">
+      <div class="header-left">
+        <div class="logo-badge">
+          <span class="logo-title">17-0</span>
+          <span class="logo-sub">ULTIMATE DRAFT</span>
+        </div>
+        <div class="round-tracker">
+          <span class="round-label">ROUND</span>
+          <span id="current-round" class="round-val">1</span>
+          <span class="round-total">/ 7</span>
+        </div>
+      </div>
+
+      <!-- Live Score & Record Projection -->
+      <div class="header-center">
+        <div class="record-projection-badge" id="hud-record-badge">
+          <span id="hud-tier-badge" class="tier-icon">🎟️</span>
+          <div class="record-text-group">
+            <span id="hud-record" class="record-val">0-0</span>
+            <span id="hud-total-score" class="score-fppg">0.0 FPPG</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <button id="sound-btn" class="icon-btn" title="Toggle Sound">🔊</button>
+        <button id="rules-btn" class="icon-btn" title="Game Rules">📖</button>
+        <button id="leaderboard-btn" class="icon-btn" title="Leaderboard">🏆</button>
+        <button id="restart-btn" class="icon-btn" title="Restart Game">🔄</button>
+      </div>
+    </header>
+
+    <!-- Main Game Board (100% Fullscreen, Zero Scrollbars) -->
+    <main id="board-container">
+      
+      <!-- Middle 65-70%: Tabletop Arena (Pack Opening OR 3D Horizontal Card Fan Arc) -->
+      <section id="interactive-stage">
+        
+        <!-- PHASE 1: Fullscreen 3D Pack Opening Scene -->
+        <div id="pack-stage-view" class="stage-view">
+          
+          <div class="booster-pack-wrapper">
+            <div class="booster-pack" id="booster-pack">
+              <!-- Top Foil Crimp & Tear Strip -->
+              <div class="pack-crimp top-crimp"></div>
+              <div class="pack-tear-strip" id="pack-tear-strip">
+                <span class="tear-notch">✂️</span>
+                <span class="tear-label">PULL TO RIP OPEN</span>
+              </div>
+
+              <!-- Pack Foil Body with Metallic Sheen -->
+              <div class="pack-body" id="pack-body">
+                <div class="pack-sheen"></div>
+                <div class="pack-edition-tag">OFFICIAL NFL DRAFT PACK</div>
+                
+                <div class="pack-team-logo" id="pack-emoji">🏹</div>
+                
+                <div class="pack-team-info">
+                  <div class="pack-season-badge" id="pack-season">2020</div>
+                  <h2 class="pack-team-title" id="pack-team-name">Kansas City Chiefs</h2>
+                </div>
+
+                <div class="pack-rip-prompt">
+                  <span class="rip-lightning">⚡</span>
+                  <span class="rip-text">CLICK TO RIP OPEN PACK</span>
+                  <span class="rip-lightning">⚡</span>
+                </div>
+              </div>
+
+              <!-- Bottom Foil Crimp -->
+              <div class="pack-crimp bottom-crimp"></div>
+            </div>
+
+            <!-- Reroll Controls on Pack -->
+            <div class="pack-reroll-bar">
+              <button id="reroll-team-btn" class="pack-reroll-btn" title="Reroll Franchise for this Year">
+                <span class="reroll-icon">🎲</span>
+                <span>Reroll Team (<span id="team-rerolls-left">1</span>)</span>
+              </button>
+              <button id="reroll-season-btn" class="pack-reroll-btn" title="Reroll Year for this Franchise">
+                <span class="reroll-icon">📅</span>
+                <span>Reroll Year (<span id="season-rerolls-left">1</span>)</span>
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- PHASE 2: 3D Horizontal Card Fan Arc on Table -->
+        <div id="fanned-stage-view" class="stage-view" style="display: none;">
+          
+          <!-- Stage Controls & Filters -->
+          <div class="fanned-controls-bar">
+            <div class="fanned-team-badge">
+              <span id="fanned-emoji" class="team-emoji">🏹</span>
+              <span id="fanned-season" class="season-badge">2020</span>
+              <span id="fanned-team-name" class="franchise-name">Kansas City Chiefs</span>
+            </div>
+
+            <!-- Position Filter Tabs -->
+            <div class="filter-tabs-group">
+              <button class="filter-tab active" data-pos="ALL">ALL</button>
+              <button class="filter-tab" data-pos="QB">QB</button>
+              <button class="filter-tab" data-pos="RB">RB</button>
+              <button class="filter-tab" data-pos="WR">WR</button>
+              <button class="filter-tab" data-pos="TE">TE</button>
+            </div>
+
+            <!-- Fan Pagination Navigation -->
+            <div class="fan-nav-bar">
+              <button id="fan-prev-btn" class="fan-nav-btn" title="Previous Cards">◀ PREV</button>
+              <span id="fan-page-indicator" style="font-size: 0.7rem; font-weight: 700; color: #94a3b8;">1 / 1</span>
+              <button id="fan-next-btn" class="fan-nav-btn" title="Next Cards">NEXT ▶</button>
+            </div>
+
+            <!-- Search Input -->
+            <div class="search-input-wrap">
+              <span class="search-icon">🔍</span>
+              <input type="text" id="search-input" placeholder="Search player..." autocomplete="off">
+              <button id="clear-search" class="clear-btn" style="display: none;">✕</button>
+            </div>
+          </div>
+
+          <!-- 3D Horizontal Arc Fan Centerpiece -->
+          <div id="player-card-pack" class="cards-fan-arc-container">
+            <!-- Dynamically Fanned Cards Rendered in a 3D Arc -->
+          </div>
+
+        </div>
+
+      </section>
+
+      <!-- Bottom 25-30%: Integrated 7-Slot Fantasy Roster Formation Bar -->
+      <section id="roster-bar-section">
+        <div class="roster-bar-header">
+          <div class="section-title">
+            <span class="field-icon">🏈</span>
+            <span>YOUR 7-MAN ROSTER</span>
+          </div>
+          <div id="chemistry-summary" class="chem-counter">
+            <span class="chem-bolt">⚡</span>
+            <span id="active-chem-count">0 Links Active</span>
+          </div>
+        </div>
+
+        <!-- 7-Card Grid on Field Table -->
+        <div id="table-cards-grid">
+          <div class="table-card-slot" id="slot-WR1" data-slot="WR1">
+            <div class="slot-placeholder">
+              <span class="slot-pos-badge wr">WR1</span>
+              <span class="slot-hint">Open</span>
+            </div>
+          </div>
+          <div class="table-card-slot" id="slot-QB" data-slot="QB">
+            <div class="slot-placeholder">
+              <span class="slot-pos-badge qb">QB</span>
+              <span class="slot-hint">Open</span>
+            </div>
+          </div>
+          <div class="table-card-slot" id="slot-WR2" data-slot="WR2">
+            <div class="slot-placeholder">
+              <span class="slot-pos-badge wr">WR2</span>
+              <span class="slot-hint">Open</span>
+            </div>
+          </div>
+          <div class="table-card-slot" id="slot-TE" data-slot="TE">
+            <div class="slot-placeholder">
+              <span class="slot-pos-badge te">TE</span>
+              <span class="slot-hint">Open</span>
+            </div>
+          </div>
+          <div class="table-card-slot" id="slot-RB1" data-slot="RB1">
+            <div class="slot-placeholder">
+              <span class="slot-pos-badge rb">RB1</span>
+              <span class="slot-hint">Open</span>
+            </div>
+          </div>
+          <div class="table-card-slot" id="slot-RB2" data-slot="RB2">
+            <div class="slot-placeholder">
+              <span class="slot-pos-badge rb">RB2</span>
+              <span class="slot-hint">Open</span>
+            </div>
+          </div>
+          <div class="table-card-slot" id="slot-FLX" data-slot="FLX">
+            <div class="slot-placeholder">
+              <span class="slot-pos-badge flx">FLX</span>
+              <span class="slot-hint">RB/WR/TE</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dynamic Chemistry Link Ticker -->
+        <div id="chemistry-feed" class="chem-feed-container"></div>
+      </section>
+
+    </main>
+
+    <!-- Modals -->
+
+    <!-- Card Inspect Modal -->
+    <div id="inspect-card-modal" class="modal-backdrop" style="display: none;">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h2 id="inspect-title">Player Card Inspect</h2>
+          <button id="close-inspect" class="close-modal-btn" onclick="document.getElementById('inspect-card-modal').style.display='none';">✕</button>
+        </div>
+        <div class="inspect-card-content">
+          <div class="inspect-photo-box">
+            <img id="inspect-photo" src="" alt="Player Photo" />
+          </div>
+          <div class="inspect-info-col">
+            <div id="inspect-tier" class="inspect-tier-tag">Legendary Gold</div>
+            <div id="inspect-team-season" style="font-weight: 700; color: #cbd5e1;">2020 KC · QB</div>
+            <div class="inspect-stat-row">
+              <span style="color: #94a3b8;">Rating:</span>
+              <strong id="inspect-fppg" style="color: #fbbf24;">24.5 FPPG</strong>
+            </div>
+            <div class="inspect-stat-row">
+              <span style="color: #94a3b8;">College:</span>
+              <strong id="inspect-college">Texas Tech</strong>
+            </div>
+            <div class="inspect-stat-row">
+              <span style="color: #94a3b8;">Draft:</span>
+              <strong id="inspect-draft">2017 R1 P10</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Game Over Victory Modal -->
+    <div id="game-over-modal" class="modal-backdrop" style="display: none;">
+      <div class="modal-card victory-card">
+        <div class="victory-header">
+          <span id="modal-badge" class="victory-badge">🏆</span>
+          <h2 id="modal-record" class="victory-record">17-0</h2>
+          <div id="modal-tier-tag" class="victory-tier">Undefeated Champion</div>
+        </div>
+
+        <div class="victory-stats-grid">
+          <div class="stat-box">
+            <span class="stat-label">BASE FPPG</span>
+            <span id="modal-base" class="stat-val">124.5</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">CHEMISTRY</span>
+            <span id="modal-chem" class="stat-val bonus">+36.0</span>
+          </div>
+          <div class="stat-box highlight">
+            <span class="stat-label">FINAL SCORE</span>
+            <span id="modal-total" class="stat-val total">160.5</span>
+          </div>
+        </div>
+
+        <div class="modal-roster-summary">
+          <h3 style="font-size: 0.95rem; margin-bottom: 6px;">Your 7-Man Fantasy Roster</h3>
+          <div id="modal-roster-list" class="mini-roster-grid"></div>
+        </div>
+
+        <div class="modal-links-summary">
+          <h3 style="font-size: 0.95rem; margin-bottom: 6px;">⚡ Chemistry Links Triggered</h3>
+          <div id="modal-links-list" class="mini-links-feed"></div>
+        </div>
+
+        <div class="modal-actions">
+          <button id="save-leaderboard-btn" class="action-btn save-btn">💾 Save to Hall of Fame</button>
+          <button id="play-again-btn" class="action-btn play-again-btn">🔄 Draft New Team</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Leaderboard Modal -->
+    <div id="leaderboard-modal" class="modal-backdrop" style="display: none;">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h2>🏆 17-0 Hall of Fame</h2>
+          <button id="close-leaderboard" class="close-modal-btn">✕</button>
+        </div>
+        <div id="leaderboard-list" class="leaderboard-items"></div>
+      </div>
+    </div>
+
+    <!-- Rules Modal -->
+    <div id="rules-modal" class="modal-backdrop" style="display: none;">
+      <div class="modal-card rules-card">
+        <div class="modal-header">
+          <h2>📖 17-0 Strategy Guide & Rules</h2>
+          <button id="close-rules" class="close-modal-btn">✕</button>
+        </div>
+        <div class="rules-content">
+          <h3>🎯 The Objective</h3>
+          <p>Draft 7 players (1 QB, 2 RB, 2 WR, 1 TE, 1 FLEX) across 7 random franchise/year rolls (1999–2024). Stack chemistry to reach <strong>160.0+ FPPG</strong> for the legendary <strong>17-0</strong> record!</p>
+          
+          <h3>⚡ Chemistry Matrix (Stackable)</h3>
+          <ul>
+            <li><strong>Same Draft Class</strong>: <code>+1.0</code> each (<code>+2.0</code> Team)</li>
+            <li><strong>Past Teammates</strong>: <code>+1.0</code> each (<code>+2.0</code> Team)</li>
+            <li><strong>Same Team & Season</strong>: <code>+2.0</code> each (<code>+4.0</code> Team)</li>
+            <li><strong>Same College</strong>: <code>+2.0</code> each (<code>+4.0</code> Team)</li>
+            <li><strong>Elite Connection</strong>: <code>+1.0</code> each (<code>+2.0</code> Team)</li>
+            <li><strong>Legendary Connection</strong>: <code>+2.0</code> each (<code>+4.0</code> Team)</li>
+          </ul>
+
+          <h3>🎲 Rerolls</h3>
+          <p>You have <strong>1 Team Reroll</strong> and <strong>1 Year Reroll</strong> per game.</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Game Scripts -->
+  <script src="stadium_canvas.js"></script>
+  <script src="audio.js"></script>
+  <script src="cards_engine.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

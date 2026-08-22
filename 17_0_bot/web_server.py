@@ -56,6 +56,8 @@ except (ImportError, ValueError):
 
 logger = logging.getLogger("17_0_web")
 ACTIVITY_DIR = BASE_DIR / "activity"
+if not ACTIVITY_DIR.exists():
+    ACTIVITY_DIR = Path.cwd() / "activity"
 
 
 def get_team_metadata(team: str, season: int) -> Dict[str, Any]:
